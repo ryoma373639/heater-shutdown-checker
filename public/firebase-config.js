@@ -8,14 +8,15 @@
 // 4. 以下の設定を自分のFirebase設定に置き換える
 
 const firebaseConfig = {
-  // 🔧 ここを自分のFirebase設定に置き換えてください
-  apiKey: "AIzaSyDEMO_REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123def456"
+  // 🔧 Firebase設定（全デバイス同期が有効）
+  apiKey: "AIzaSyBAhk1urHmJt9Mx70YTY3UVBOFgt62R5Bs",
+  authDomain: "heater-checker.firebaseapp.com",
+  databaseURL: "https://heater-checker-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "heater-checker",
+  storageBucket: "heater-checker.firebasestorage.app",
+  messagingSenderId: "179822727838",
+  appId: "1:179822727838:web:fa7ac5ea5e2bd227d9618f",
+  measurementId: "G-7QRG30YPLF"
 };
 
 // Firebase初期化
