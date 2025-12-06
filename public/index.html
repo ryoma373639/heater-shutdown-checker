@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>灯油ストーブ消火確認アプリ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); min-height: 100vh; padding: 12px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 16px; margin-bottom: 16px; }
+    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .icon-box { background: #ef4444; padding: 10px; border-radius: 8px; font-size: 20px; }
+    h1 { font-size: 20px; color: #1f2937; }
+    .subtitle { font-size: 12px; color: #6b7280; }
+    .info-box { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 6px; margin-top: 12px; font-size: 13px; }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab { padding: 12px 16px; border: none; border-radius: 8px 8px 0 0; font-weight: 600; cursor: pointer; font-size: 14px; background: #e5e7eb; color: #6b7280; flex: 1; min-width: 80px; text-align: center; }
+    .tab.active { background: #ef4444; color: white; }
+    
+    .input-group { display: flex; gap: 8px; margin-top: 12px; }
+    input[type="text"] { flex: 1; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+    .btn { padding: 12px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-yellow { background: #f59e0b; color: white; padding: 12px 20px; }
+    .btn-success { background: #10b981; color: white; font-size: 16px; padding: 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .reuse-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .reuse-input { flex: 1; min-width: 120px; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+    .reuse-number { width: 70px; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; text-align: center; }
+    
+    .stats { display: flex; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .stats h2 { font-size: 16px; }
+    .stats-text { font-size: 13px; color: #6b7280; }
+    .employee-list { max-height: 400px; overflow-y: auto; }
+    .employee-item { display: flex; align-items: center; gap: 10px; padding: 14px 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
+    .employee-item.checked { background: #f0fdf4; border-color: #86efac; }
+    input[type="checkbox"] { width: 28px; height: 28px; cursor: pointer; flex-shrink: 0; }
+    .employee-name { flex: 1; font-size: 16px; color: #1f2937; font-weight: 500; word-break: break-word; }
+    .employee-name.checked { color: #9ca3af; text-decoration: line-through; }
+    .btn-delete { padding: 10px 16px; background: #fee2e2; border: none; color: #ef4444; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+    .modal.show { display: flex; }
+    .modal-content { background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .modal-icon { padding: 12px; border-radius: 50%; flex-shrink: 0; }
+    .modal-icon.warning { background: #ef4444; }
+    .modal-icon.success { background: #10b981; }
+    .modal-title { font-size: 18px; font-weight: bold; }
+    .modal-title.warning { color: #dc2626; }
+    .modal-title.success { color: #059669; }
+    .unchecked-list { background: #fee2e2; border: 2px solid #fca5a5; border-radius: 8px; padding: 16px; margin: 16px 0; max-height: 200px; overflow-y: auto; }
+    .unchecked-item { display: flex; align-items: center; gap: 8px; color: #991b1b; font-weight: 500; margin-bottom: 8px; font-size: 15px; }
+    .dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; flex-shrink: 0; }
+    .success-box { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 24px; text-align: center; margin: 16px 0; }
+    .success-emoji { font-size: 48px; margin-bottom: 8px; }
+    .btn-modal { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; }
+    .btn-modal.dark { background: #1f2937; color: white; }
+    .btn-modal.success { background: #10b981; color: white; }
+    .section-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    
+    @media (max-width: 480px) {
+      .reuse-group { flex-direction: column; }
+      .reuse-number { width: 100%; }
+      .reuse-input { width: 100%; }
+      .btn-yellow { width: 100%; text-align: center; }
+      .tab { padding: 10px 8px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="icon-box">🔥</div>
+        <div style="flex: 1;"><h1>灯油ストーブ消火確認</h1><p class="subtitle">火器安全管理システム</p></div>
+      </div>
+      <div class="info-box"><p style="color: #1e40af;"><strong>毎日AM3時に自動リセット</strong> されます。退社時に必ずチェックしてください。</p></div>
+    </div>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab(0)">第一工場</button>
+      <button class="tab" onclick="switchTab(1)">第二工場</button>
+      <button class="tab" onclick="switchTab(2)">第三工場</button>
+      <button class="tab" onclick="switchTab(3)">第四工場</button>
+    </div>
+    
+    <div class="card">
+      <div class="section-title">社員の追加</div>
+      <div class="input-group">
+        <input type="text" id="employeeNameInput" placeholder="社員名を入力">
+        <button class="btn btn-primary" onclick="addEmployee()">追加</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">再使用</div>
+      <div class="reuse-group">
+        <input type="text" id="reuseNumberInput" class="reuse-number" placeholder="番号">
+        <input type="text" id="reuseNameInput" class="reuse-input" placeholder="自分の名前を入力">
+        <button class="btn btn-yellow" onclick="reuseEmployee()">再使用</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stats"><h2 id="listTitle">消火確認リスト (0/0)</h2><span class="stats-text" id="uncheckedCount">未確認: 0名</span></div>
+      <div class="employee-list" id="employeeList"></div>
+    </div>
+    <div class="card">
+      <button class="btn btn-success" onclick="handleFinalCheck()">✓ 最終確認・完了</button>
+    </div>
+  </div>
+  <div class="modal" id="warningModal"><div class="modal-content" id="modalContent"></div></div>
+
+<script>
+var factoryNames = ['第一工場', '第二工場', '第三工場', '第四工場'];
+var allEmployees = {};
+var currentTab = 0;
+
+function init() {
+  loadData();
+  checkAndResetDaily();
+  renderEmployeeList();
+}
+
+function loadData() {
+  for (var i = 0; i < factoryNames.length; i++) {
+    var key = 'heater-employees-' + i;
+    var saved = localStorage.getItem(key);
+    if (saved) {
+      allEmployees[i] = JSON.parse(saved);
+    } else {
+      allEmployees[i] = [];
+    }
+  }
+}
+
+function saveData() {
+  var key = 'heater-employees-' + currentTab;
+  localStorage.setItem(key, JSON.stringify(allEmployees[currentTab]));
+}
+
+function checkAndResetDaily() {
+  var lastReset = localStorage.getItem('heater-last-reset');
+  var now = new Date();
+  var today = now.toDateString();
+  var currentHour = now.getHours();
+  if (!lastReset || (lastReset !== today && currentHour >= 3)) {
+    for (var f = 0; f < factoryNames.length; f++) {
+      if (allEmployees[f]) {
+        for (var i = 0; i < allEmployees[f].length; i++) {
+          allEmployees[f][i].checked = false;
+        }
+        var key = 'heater-employees-' + f;
+        localStorage.setItem(key, JSON.stringify(allEmployees[f]));
+      }
+    }
+    localStorage.setItem('heater-last-reset', today);
+  }
+  setTimeout(checkAndResetDaily, 60000);
+}
+
+function switchTab(index) {
+  currentTab = index;
+  var tabs = document.getElementsByClassName('tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].className = 'tab';
+  }
+  tabs[index].className = 'tab active';
+  renderEmployeeList();
+}
+
+function getEmployees() {
+  if (!allEmployees[currentTab]) {
+    allEmployees[currentTab] = [];
+  }
+  return allEmployees[currentTab];
+}
+
+function renderEmployeeList() {
+  var employees = getEmployees();
+  var list = document.getElementById('employeeList');
+  var checkedCount = 0;
+  for (var i = 0; i < employees.length; i++) {
+    if (employees[i].checked) {
+      checkedCount = checkedCount + 1;
+    }
+  }
+  var uncheckedCount = employees.length - checkedCount;
+  document.getElementById('listTitle').textContent = factoryNames[currentTab] + ' 消火確認リスト (' + checkedCount + '/' + employees.length + ')';
+  document.getElementById('uncheckedCount').textContent = '未確認: ' + uncheckedCount + '名';
+  var html = '';
+  for (var i = 0; i < employees.length; i++) {
+    var emp = employees[i];
+    var checkedClass = emp.checked ? 'checked' : '';
+    var checkedAttr = emp.checked ? 'checked' : '';
+    html = html + '<div class="employee-item ' + checkedClass + '">';
+    html = html + '<input type="checkbox" ' + checkedAttr + ' onchange="toggleCheck(' + emp.id + ')">';
+    html = html + '<span class="employee-name ' + checkedClass + '">' + emp.name + '</span>';
+    html = html + '<button class="btn-delete" onclick="deleteEmployee(' + emp.id + ')">削除</button></div>';
+  }
+  list.innerHTML = html;
+}
+
+function toggleCheck(id) {
+  var employees = getEmployees();
+  for (var i = 0; i < employees.length; i++) {
+    if (employees[i].id === id) {
+      employees[i].checked = !employees[i].checked;
+      break;
+    }
+  }
+  saveData();
+  renderEmployeeList();
+}
+
+function addEmployee() {
+  var input = document.getElementById('employeeNameInput');
+  var name = input.value;
+  if (name && name.length > 0) {
+    name = name.trim();
+    if (name.length > 0) {
+      var employees = getEmployees();
+      var newEmp = new Object();
+      newEmp.id = Date.now();
+      newEmp.name = name;
+      newEmp.checked = false;
+      employees.push(newEmp);
+      saveData();
+      renderEmployeeList();
+      input.value = '';
+    }
+  }
+}
+
+function deleteEmployee(id) {
+  var employees = getEmployees();
+  var newEmployees = [];
+  for (var i = 0; i < employees.length; i++) {
+    if (employees[i].id !== id) {
+      newEmployees.push(employees[i]);
+    }
+  }
+  allEmployees[currentTab] = newEmployees;
+  saveData();
+  renderEmployeeList();
+}
+
+function reuseEmployee() {
+  var numberInput = document.getElementById('reuseNumberInput');
+  var nameInput = document.getElementById('reuseNameInput');
+  var number = numberInput.value.trim();
+  var name = nameInput.value.trim();
+  
+  if (number && name) {
+    var employees = getEmployees();
+    var newEmp = new Object();
+    newEmp.id = Date.now();
+    newEmp.name = number + ' ' + name;
+    newEmp.checked = false;
+    employees.push(newEmp);
+    saveData();
+    renderEmployeeList();
+    numberInput.value = '';
+    nameInput.value = '';
+  }
+}
+
+function handleFinalCheck() {
+  var employees = getEmployees();
+  var unchecked = [];
+  for (var i = 0; i < employees.length; i++) {
+    if (!employees[i].checked) {
+      unchecked.push(employees[i]);
+    }
+  }
+  var modal = document.getElementById('warningModal');
+  var content = document.getElementById('modalContent');
+  var html = '';
+  if (unchecked.length > 0) {
+    html = html + '<div class="modal-header"><div class="modal-icon warning">⚠️</div>';
+    html = html + '<h3 class="modal-title warning">警告</h3></div>';
+    html = html + '<p style="color: #374151; font-weight: 600; margin-bottom: 16px;">';
+    html = html + '【' + factoryNames[currentTab] + '】<br>以下の' + unchecked.length + '名の消火確認が完了していません：</p>';
+    html = html + '<div class="unchecked-list">';
+    for (var i = 0; i < unchecked.length; i++) {
+      html = html + '<div class="unchecked-item"><span class="dot"></span>' + unchecked[i].name + '</div>';
+    }
+    html = html + '</div><button class="btn-modal dark" onclick="closeModal()">確認しました</button>';
+  } else {
+    html = html + '<div class="modal-header"><div class="modal-icon success">✓</div>';
+    html = html + '<h3 class="modal-title success">確認完了</h3></div>';
+    html = html + '<p style="color: #374151; font-weight: 600; text-align: center; margin-bottom: 16px;">';
+    html = html + '【' + factoryNames[currentTab] + '】<br>全員の消火確認が完了しました！</p>';
+    html = html + '<div class="success-box"><div class="success-emoji">🎉</div>';
+    html = html + '<p style="color: #166534; font-weight: 500;">' + employees.length + '名全員の安全確認済み</p>';
+    html = html + '<p style="color: #6b7280; font-size: 14px; margin-top: 8px;">お疲れ様でした</p></div>';
+    html = html + '<button class="btn-modal success" onclick="closeModal()">閉じる</button>';
+  }
+  content.innerHTML = html;
+  modal.classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('warningModal').classList.remove('show');
+}
+
+function setupEvents() {
+  var input = document.getElementById('employeeNameInput');
+  input.onkeypress = function(e) {
+    if (e.key === 'Enter') {
+      addEmployee();
+    }
+  };
+  init();
+}
+
+if (window.addEventListener) {
+  window.addEventListener('load', setupEvents, false);
+} else if (window.attachEvent) {
+  window.attachEvent('onload', setupEvents);
+} else {
+  window.onload = setupEvents;
+}
+</script>
+</body>
+</html>
