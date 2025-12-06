@@ -9,6 +9,12 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
   <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: sans-serif; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); min-height: 100vh; padding: 12px; }
@@ -121,26 +127,68 @@ var allEmployees = {};
 var currentTab = 0;
 
 function init() {
+  // Firebaseを初期化
+  initFirebase();
+
   loadData();
   checkAndResetDaily();
   renderEmployeeList();
+
+  // Firebase同期リスナーをセットアップ
+  if (isFirebaseConnected()) {
+    setupFirebaseListeners();
+  }
 }
 
 function loadData() {
-  for (var i = 0; i < factoryNames.length; i++) {
-    var key = 'heater-employees-' + i;
-    var saved = localStorage.getItem(key);
-    if (saved) {
-      allEmployees[i] = JSON.parse(saved);
-    } else {
-      allEmployees[i] = [];
+  if (isFirebaseConnected()) {
+    // Firebaseからデータを読み込み
+    var db = getDatabase();
+    for (var i = 0; i < factoryNames.length; i++) {
+      (function(factoryIndex) {
+        db.ref('factories/' + factoryIndex + '/employees').once('value').then(function(snapshot) {
+          var data = snapshot.val();
+          if (data) {
+            allEmployees[factoryIndex] = data;
+          } else {
+            allEmployees[factoryIndex] = [];
+          }
+          if (factoryIndex === currentTab) {
+            renderEmployeeList();
+          }
+        });
+      })(i);
+    }
+  } else {
+    // localStorageから読み込み（フォールバック）
+    for (var i = 0; i < factoryNames.length; i++) {
+      var key = 'heater-employees-' + i;
+      var saved = localStorage.getItem(key);
+      if (saved) {
+        allEmployees[i] = JSON.parse(saved);
+      } else {
+        allEmployees[i] = [];
+      }
     }
   }
 }
 
 function saveData() {
+  // localStorageにバックアップ保存（オフライン時用）
   var key = 'heater-employees-' + currentTab;
   localStorage.setItem(key, JSON.stringify(allEmployees[currentTab]));
+
+  // Firebaseに保存（全デバイス同期）
+  if (isFirebaseConnected()) {
+    var db = getDatabase();
+    db.ref('factories/' + currentTab + '/employees').set(allEmployees[currentTab])
+      .then(function() {
+        console.log('✅ データ同期成功 - 工場' + (currentTab + 1));
+      })
+      .catch(function(error) {
+        console.error('❌ データ同期エラー:', error);
+      });
+  }
 }
 
 function checkAndResetDaily() {
@@ -149,6 +197,7 @@ function checkAndResetDaily() {
   var today = now.toDateString();
   var currentHour = now.getHours();
   if (!lastReset || (lastReset !== today && currentHour >= 3)) {
+    console.log('🔄 AM3時リセット実行中...');
     for (var f = 0; f < factoryNames.length; f++) {
       if (allEmployees[f]) {
         for (var i = 0; i < allEmployees[f].length; i++) {
@@ -156,9 +205,20 @@ function checkAndResetDaily() {
         }
         var key = 'heater-employees-' + f;
         localStorage.setItem(key, JSON.stringify(allEmployees[f]));
+
+        // Firebaseにもリセットを保存
+        if (isFirebaseConnected()) {
+          var db = getDatabase();
+          db.ref('factories/' + f + '/employees').set(allEmployees[f]);
+        }
       }
     }
     localStorage.setItem('heater-last-reset', today);
+
+    // Firebaseにリセット時刻を保存
+    syncResetToFirebase();
+
+    console.log('✅ リセット完了');
   }
   setTimeout(checkAndResetDaily, 60000);
 }
@@ -337,6 +397,56 @@ if ('serviceWorker' in navigator) {
         console.log('Service Worker registration failed:', error);
       });
   });
+}
+
+// Firebaseリアルタイム同期リスナー
+function setupFirebaseListeners() {
+  if (!isFirebaseConnected()) return;
+
+  var db = getDatabase();
+  console.log('🔄 リアルタイム同期を開始...');
+
+  // 各工場のデータ変更をリスニング
+  for (var i = 0; i < factoryNames.length; i++) {
+    (function(factoryIndex) {
+      db.ref('factories/' + factoryIndex + '/employees').on('value', function(snapshot) {
+        var data = snapshot.val();
+        if (data) {
+          allEmployees[factoryIndex] = data;
+
+          // 現在表示中の工場の場合のみUIを更新
+          if (factoryIndex === currentTab) {
+            renderEmployeeList();
+            console.log('🔄 ' + factoryNames[factoryIndex] + 'のデータを同期しました');
+          }
+
+          // localStorageにもバックアップ
+          var key = 'heater-employees-' + factoryIndex;
+          localStorage.setItem(key, JSON.stringify(data));
+        }
+      });
+    })(i);
+  }
+
+  // リセット時刻の同期
+  db.ref('settings/lastReset').on('value', function(snapshot) {
+    var lastReset = snapshot.val();
+    if (lastReset) {
+      localStorage.setItem('heater-last-reset', lastReset);
+    }
+  });
+
+  console.log('✅ 全デバイス同期が有効になりました！');
+  console.log('💡 他のデバイスでの変更が自動的に反映されます');
+}
+
+// リセット処理もFirebaseに保存
+function syncResetToFirebase() {
+  if (isFirebaseConnected()) {
+    var db = getDatabase();
+    var today = new Date().toDateString();
+    db.ref('settings/lastReset').set(today);
+  }
 }
 </script>
 </body>
