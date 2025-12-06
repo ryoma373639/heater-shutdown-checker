@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRコード - 灯油ストーブ消火確認アプリ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      padding: 40px;
+      text-align: center;
+    }
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #1f2937;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 30px;
+    }
+    .qr-container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid #e5e7eb;
+      margin-bottom: 30px;
+      display: inline-block;
+    }
+    #qrcode {
+      display: inline-block;
+    }
+    .url {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      color: #1f2937;
+      margin-bottom: 20px;
+      word-break: break-all;
+    }
+    .instructions {
+      background: #dbeafe;
+      border-left: 4px solid #3b82f6;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: left;
+      margin-top: 30px;
+    }
+    .instructions h2 {
+      font-size: 16px;
+      color: #1e40af;
+      margin-bottom: 10px;
+    }
+    .instructions ol {
+      margin-left: 20px;
+      color: #1f2937;
+    }
+    .instructions li {
+      margin-bottom: 8px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #ef4444;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #dc2626;
+    }
+    .print-btn {
+      background: #3b82f6;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 10px;
+    }
+    .print-btn:hover {
+      background: #2563eb;
+    }
+    @media print {
+      body { background: white; }
+      .btn, .instructions { display: none; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🔥</div>
+    <h1>灯油ストーブ消火確認アプリ</h1>
+    <p class="subtitle">QRコードでアクセス</p>
+
+    <div class="qr-container">
+      <div id="qrcode"></div>
+    </div>
+
+    <div class="url" id="appUrl">読み込み中...</div>
+
+    <a href="index.html" class="btn">アプリを開く</a>
+    <button class="btn print-btn" onclick="window.print()">🖨️ 印刷</button>
+
+    <div class="instructions">
+      <h2>📱 使い方</h2>
+      <ol>
+        <li>スマートフォンのカメラでQRコードを読み取る</li>
+        <li>表示されたリンクをタップ</li>
+        <li>アプリが開きます</li>
+        <li>ホーム画面に追加するとアプリのように使えます</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    // GitHub PagesのURLを取得
+    var appUrl = window.location.origin + window.location.pathname.replace('qr.html', '');
+
+    // URLを表示
+    document.getElementById('appUrl').textContent = appUrl;
+
+    // QRコード生成
+    new QRCode(document.getElementById('qrcode'), {
+      text: appUrl,
+      width: 256,
+      height: 256,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  </script>
+</body>
+</html>
