@@ -4,8 +4,10 @@
   "description": "Autonomous development powered by Agentic OS",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts",
-    "build": "tsc",
+    "dev": "serve public -p 3000",
+    "build": "npm run build:dist",
+    "build:dist": "node scripts/build.js",
+    "preview": "serve dist -p 4000",
     "test": "vitest",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
@@ -22,6 +24,7 @@
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
     "eslint": "^8.54.0",
+    "serve": "^14.2.1",
     "tsx": "^4.7.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"

@@ -1,0 +1,95 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build distribution package
+        run: npm run build
+
+      - name: Create ZIP package
+        run: |
+          cd dist
+          zip -r ../heater-shutdown-checker-${GITHUB_REF#refs/tags/}.zip .
+          cd ..
+
+      - name: Extract version
+        id: extract_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release Notes
+        id: release_notes
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          ## 🔥 灯油ストーブ消火確認アプリ v${{ steps.extract_version.outputs.VERSION }}
+
+          ### ダウンロード
+
+          ZIPファイルをダウンロードして解凍し、`index.html`をブラウザで開いてください。
+
+          ### インストール方法
+
+          詳細は `INSTALL.md` をご確認ください。
+
+          - **スマートフォン**: PWAとしてホーム画面に追加可能
+          - **パソコン**: ZIPを解凍して`index.html`を開く
+          - **オンライン**: https://ryoma373639.github.io/heater-shutdown-checker/
+
+          ### 主な機能
+
+          - 📱 PWA対応（オフライン動作）
+          - 🏭 4工場対応
+          - ✅ 消火確認チェックリスト
+          - 🔄 毎日AM3時自動リセット
+          - 💾 localStorageでデータ永続化
+
+          ### 含まれるファイル
+
+          - `index.html` - メインアプリ
+          - `manifest.json` - PWAマニフェスト
+          - `sw.js` - Service Worker
+          - `assets/` - アイコン等
+          - `README.md` - 説明書
+          - `INSTALL.md` - インストール手順
+          - `USER_GUIDE.md` - ユーザーガイド
+          - `LICENSE` - ライセンス
+
+          ### 動作環境
+
+          - **ブラウザ**: Chrome, Edge, Firefox, Safari（最新版）
+          - **OS**: Windows 10以降, macOS 10.12以降, iOS 11.3以降, Android 5.0以降
+
+          ---
+
+          🤖 Built with [Miyabi](https://miyabi.app)
+          EOF
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: heater-shutdown-checker-*.zip
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

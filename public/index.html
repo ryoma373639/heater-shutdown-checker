@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="灯油ストーブの消火確認を管理するアプリケーション">
+  <meta name="theme-color" content="#ef4444">
   <title>灯油ストーブ消火確認アプリ</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: sans-serif; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); min-height: 100vh; padding: 12px; }
@@ -319,6 +324,19 @@ if (window.addEventListener) {
   window.attachEvent('onload', setupEvents);
 } else {
   window.onload = setupEvents;
+}
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(registration) {
+        console.log('Service Worker registered successfully:', registration.scope);
+      })
+      .catch(function(error) {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
 }
 </script>
 </body>

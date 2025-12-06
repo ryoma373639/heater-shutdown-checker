@@ -1,135 +1,137 @@
-# heater-shutdown-checker
+# 🔥 灯油ストーブ消火確認アプリ
 
-Autonomous development powered by **Miyabi** - AI-driven development framework.
+灯油ストーブの消火確認を管理するPWA（Progressive Web App）アプリケーションです。
+複数の工場で働く社員の消火確認状況をリアルタイムで追跡できます。
 
-## Getting Started
+## ✨ 機能
 
-### Prerequisites
+- 📱 **PWA対応**: オフラインでも動作、スマートフォンにインストール可能
+- 🏭 **複数工場対応**: 4つの工場（第一〜第四工場）のタブ管理
+- ✅ **消火確認チェック**: 社員ごとのチェックボックスで簡単確認
+- 👥 **社員管理**: 社員の追加・削除・再使用が可能
+- 🔄 **自動リセット**: 毎日AM3時に自動的にリセット
+- 💾 **データ永続化**: localStorageでデータを保存
+- 🌐 **完全オフライン**: インターネット接続不要で動作
+
+## 🚀 クイックスタート
+
+### 方法1: GitHub Pagesでアクセス
+
+https://ryoma373639.github.io/heater-shutdown-checker/
+
+### 方法2: ローカルで実行
 
 ```bash
-# Set environment variables
-cp .env.example .env
-# Edit .env and add your tokens
-```
+# リポジトリをクローン
+git clone https://github.com/ryoma373639/heater-shutdown-checker.git
+cd heater-shutdown-checker
 
-### Installation
-
-```bash
+# 依存関係をインストール
 npm install
+
+# 開発サーバーを起動
+npm run dev
 ```
 
-### Development
+ブラウザで http://localhost:3000 を開いてください。
 
-```bash
-npm run dev          # Run development server
-npm run build        # Build project
-npm test             # Run tests
-npm run typecheck    # Check types
-npm run lint         # Lint code
-```
+### 方法3: 配布用ZIPをダウンロード
 
-## Project Structure
+1. [Releases](https://github.com/ryoma373639/heater-shutdown-checker/releases)から最新版をダウンロード
+2. ZIPファイルを解凍
+3. `index.html`をブラウザで開く
+
+## 📱 スマートフォンにインストール
+
+### iOS (Safari)
+
+1. Safariでアプリを開く
+2. 画面下部の共有ボタンをタップ
+3. 「ホーム画面に追加」を選択
+4. 「追加」をタップ
+
+### Android (Chrome)
+
+1. Chromeでアプリを開く
+2. 右上のメニュー（⋮）をタップ
+3. 「ホーム画面に追加」を選択
+4. 「追加」をタップ
+
+## 📖 使い方
+
+### 社員を追加
+
+1. 「社員の追加」欄に社員名を入力
+2. 「追加」ボタンをクリック
+
+### 消火確認をチェック
+
+1. 該当する工場のタブを選択
+2. 消火確認が完了した社員のチェックボックスをオン
+
+### 最終確認
+
+1. 「最終確認・完了」ボタンをクリック
+2. 未確認者がいる場合は警告が表示されます
+3. 全員確認済みの場合は完了メッセージが表示されます
+
+### 社員を再使用
+
+1. 「再使用」欄に番号と名前を入力
+2. 「再使用」ボタンをクリック
+
+## 🛠️ 技術スタック
+
+- **フロントエンド**: Pure HTML/CSS/JavaScript (フレームワーク不使用)
+- **PWA**: Service Worker, Web App Manifest
+- **ストレージ**: localStorage
+- **スタイリング**: カスタムCSS (レスポンシブデザイン)
+- **配布**: GitHub Pages / GitHub Releases
+
+## 📂 ディレクトリ構造
 
 ```
 heater-shutdown-checker/
-├── src/              # Source code
-│   └── index.ts     # Entry point
-├── tests/           # Test files
-│   └── example.test.ts
-├── .claude/         # AI agent configuration
-│   ├── agents/      # Agent definitions
-│   └── commands/    # Custom commands
-├── .github/
-│   ├── workflows/   # CI/CD automation
-│   └── labels.yml   # Label system (53 labels)
-├── CLAUDE.md        # AI context file
-└── package.json
+├── public/               # 公開ディレクトリ
+│   ├── index.html       # メインHTML
+│   ├── manifest.json    # PWAマニフェスト
+│   ├── sw.js            # Service Worker
+│   └── assets/          # 静的リソース
+│       ├── css/         # スタイルシート
+│       ├── js/          # JavaScript
+│       └── icons/       # アイコン画像
+├── docs/                # ドキュメント
+│   ├── INSTALL.md       # インストール手順
+│   ├── USER_GUIDE.md    # ユーザーガイド
+│   └── DEVELOPER.md     # 開発者向けドキュメント
+├── scripts/             # ビルドスクリプト
+│   └── build.js         # 配布用ビルド
+├── dist/                # ビルド出力
+└── package.json         # NPMパッケージ設定
 ```
 
-## Miyabi Framework
+## 🔒 セキュリティ
 
-This project uses **7 autonomous AI agents**:
+- XSS対策: ユーザー入力は適切にサニタイズ
+- データ保存: localStorageのみ使用（外部送信なし）
+- HTTPS推奨: Service WorkerはHTTPS環境で動作
 
-1. **CoordinatorAgent** - Task planning & orchestration
-2. **IssueAgent** - Automatic issue analysis & labeling
-3. **CodeGenAgent** - AI-powered code generation
-4. **ReviewAgent** - Code quality validation (80+ score)
-5. **PRAgent** - Automatic PR creation
-6. **DeploymentAgent** - CI/CD deployment automation
-7. **TestAgent** - Test execution & coverage
+## 📜 ライセンス
 
-### Workflow
+MIT License - 詳細は [LICENSE](LICENSE) をご確認ください。
 
-1. **Create Issue**: Describe what you want to build
-2. **Agents Work**: AI agents analyze, implement, test
-3. **Review PR**: Check generated pull request
-4. **Merge**: Automatic deployment
+## 🤝 貢献
 
-### Label System
+プルリクエストを歓迎します！詳細は [docs/DEVELOPER.md](docs/DEVELOPER.md) をご確認ください。
 
-Issues transition through states automatically:
+## 🐛 バグ報告・機能要望
 
-- `📥 state:pending` - Waiting for agent assignment
-- `🔍 state:analyzing` - Being analyzed
-- `🏗️ state:implementing` - Code being written
-- `👀 state:reviewing` - Under review
-- `✅ state:done` - Completed & merged
+[GitHub Issues](https://github.com/ryoma373639/heater-shutdown-checker/issues)で報告してください。
 
-## Commands
+## 📞 サポート
 
-```bash
-# Check project status
-npx miyabi status
-
-# Watch for changes (real-time)
-npx miyabi status --watch
-
-# Create new issue
-gh issue create --title "Add feature" --body "Description"
-```
-
-## Configuration
-
-### Environment Variables
-
-Required variables (see `.env.example`):
-
-- `GITHUB_TOKEN` - GitHub personal access token
-- `ANTHROPIC_API_KEY` - Claude API key (optional for local development)
-- `REPOSITORY` - Format: `owner/repo`
-
-### GitHub Actions
-
-Workflows are pre-configured in `.github/workflows/`:
-
-- CI/CD pipeline
-- Automated testing
-- Deployment automation
-- Agent execution triggers
-
-**Note**: Set repository secrets at:
-`https://github.com/ryoma373639/heater-shutdown-checker/settings/secrets/actions`
-
-Required secrets:
-- `GITHUB_TOKEN` (auto-provided by GitHub Actions)
-- `ANTHROPIC_API_KEY` (add manually for agent execution)
-
-## Documentation
-
-- **Miyabi Framework**: https://github.com/ShunsukeHayashi/Miyabi
-- **NPM Package**: https://www.npmjs.com/package/miyabi
-- **Label System**: See `.github/labels.yml`
-- **Agent Operations**: See `CLAUDE.md`
-
-## Support
-
-- **Issues**: https://github.com/ShunsukeHayashi/Miyabi/issues
-- **Discord**: [Coming soon]
-
-## License
-
-MIT
+質問がある場合は、[GitHub Discussions](https://github.com/ryoma373639/heater-shutdown-checker/discussions)をご利用ください。
 
 ---
 
-✨ Generated by [Miyabi](https://github.com/ShunsukeHayashi/Miyabi)
+🤖 Developed with [Miyabi](https://miyabi.app) - Autonomous Development Framework
