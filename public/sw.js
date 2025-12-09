@@ -1,11 +1,11 @@
 // Service Worker for Heater Shutdown Checker PWA
-const CACHE_NAME = 'heater-checker-v1.0.0';
+const CACHE_NAME = 'heater-checker-v1.0.1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/assets/icons/icon-192.png',
-  '/assets/icons/icon-512.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png'
 ];
 
 // Install event - cache resources
@@ -76,7 +76,7 @@ self.addEventListener('fetch', (event) => {
         }).catch((error) => {
           console.log('[Service Worker] Fetch failed:', error);
           // Return offline page if available
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         });
       })
   );
