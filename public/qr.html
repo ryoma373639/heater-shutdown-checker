@@ -137,8 +137,14 @@
   </div>
 
   <script>
-    // GitHub PagesのURLを取得
+    // ローカル環境またはGitHub PagesのURLを取得
     var appUrl = window.location.origin + window.location.pathname.replace('qr.html', '');
+
+    // ローカル開発環境の場合、IPアドレスを使用
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // 手動でIPアドレスとポートを設定（開発時のみ）
+      appUrl = 'http://192.168.6.104:65093/';
+    }
 
     // URLを表示
     document.getElementById('appUrl').textContent = appUrl;
