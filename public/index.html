@@ -233,22 +233,24 @@ function checkAndResetDaily() {
   var currentHour = now.getHours();
   if (!lastReset || (lastReset !== today && currentHour >= 3)) {
     console.log('🔄 AM3時リセット実行中...');
-    for (var f = 0; f < factoryNames.length; f++) {
-      if (allEmployees[f]) {
-        for (var i = 0; i < allEmployees[f].length; i++) {
-          allEmployees[f][i].checked = false;
-        }
-        var key = 'heater-employees-' + f;
-        localStorage.setItem(key, JSON.stringify(allEmployees[f]));
+    console.log('📝 社員リストとチェック状態を全てクリアします');
 
-        // Firebaseにもリセットを保存
-        if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
-          try {
-            var db = getDatabase();
-            db.ref('factories/' + f + '/employees').set(allEmployees[f]);
-          } catch (e) {
-            console.warn('Firebaseリセット保存スキップ:', e);
-          }
+    // 全工場の社員リストを空にする
+    for (var f = 0; f < factoryNames.length; f++) {
+      // 社員リストを空の配列にリセット
+      allEmployees[f] = [];
+
+      // localStorageに保存
+      var key = 'heater-employees-' + f;
+      localStorage.setItem(key, JSON.stringify(allEmployees[f]));
+
+      // Firebaseにもリセットを保存
+      if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
+        try {
+          var db = getDatabase();
+          db.ref('factories/' + f + '/employees').set(allEmployees[f]);
+        } catch (e) {
+          console.warn('Firebaseリセット保存スキップ:', e);
         }
       }
     }
@@ -259,7 +261,10 @@ function checkAndResetDaily() {
       syncResetToFirebase();
     }
 
-    console.log('✅ リセット完了');
+    // UIを更新
+    renderEmployeeList();
+
+    console.log('✅ リセット完了 - 全ての社員リストとチェックをクリアしました');
   }
   setTimeout(checkAndResetDaily, 60000);
 }
