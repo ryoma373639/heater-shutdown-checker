@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理画面 - 灯油ストーブ消火確認アプリ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+    h1 { color: #667eea; margin-bottom: 10px; font-size: 24px; }
+    .subtitle { color: #6b7280; margin-bottom: 20px; font-size: 14px; }
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 10px;
+      transition: transform 0.2s;
+    }
+    button:hover { transform: scale(1.02); }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-info { background: #3b82f6; color: white; }
+    #log {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .status.success { background: #d1fae5; color: #065f46; }
+    .status.warning { background: #fef3c7; color: #92400e; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🔧 管理画面</h1>
+      <p class="subtitle">灯油ストーブ消火確認アプリ - データ管理</p>
+
+      <div id="status" class="status warning">
+        Firebase接続中...
+      </div>
+
+      <button class="btn-danger" onclick="forceResetAll()">
+        🔄 全データを今すぐリセット
+      </button>
+
+      <button class="btn-warning" onclick="clearLocalStorage()">
+        🗑️ ローカルデータをクリア
+      </button>
+
+      <button class="btn-info" onclick="checkStatus()">
+        📊 現在の状態を確認
+      </button>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom: 15px; font-size: 18px;">📝 ログ</h2>
+      <div id="log">ログが表示されます...</div>
+    </div>
+  </div>
+
+  <script>
+    let db = null;
+
+    function log(msg, isError = false) {
+      const logDiv = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString('ja-JP');
+      const prefix = isError ? '❌' : '✅';
+      logDiv.textContent += `[${timestamp}] ${prefix} ${msg}\n`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(msg);
+    }
+
+    function updateStatus(msg, isSuccess = true) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = msg;
+      statusDiv.className = 'status ' + (isSuccess ? 'success' : 'warning');
+    }
+
+    // Firebase初期化
+    if (typeof initFirebase === 'function') {
+      initFirebase();
+      if (typeof getDatabase === 'function') {
+        db = getDatabase();
+        updateStatus('✅ Firebase接続成功');
+        log('Firebase初期化完了');
+      }
+    }
+
+    async function forceResetAll() {
+      if (!confirm('本当に全データをリセットしますか？\n\n・全工場の社員リストが削除されます\n・チェック状態がクリアされます\n・この操作は取り消せません')) {
+        return;
+      }
+
+      log('🔄 強制リセット開始...');
+      updateStatus('🔄 リセット実行中...', false);
+
+      try {
+        // 全工場をリセット
+        const factoryNames = ['第一工場', '第二工場', '第三工場', '第四工場'];
+        for (let i = 0; i < 4; i++) {
+          // Firebase
+          if (db) {
+            await db.ref('factories/' + i + '/employees').set([]);
+            log(`Firebase: ${factoryNames[i]}をリセット`);
+          }
+
+          // localStorage
+          localStorage.removeItem('heater-employees-' + i);
+          log(`localStorage: ${factoryNames[i]}をクリア`);
+        }
+
+        // リセット時刻を削除（再リセットを許可）
+        localStorage.removeItem('heater-last-reset');
+        if (db) {
+          await db.ref('settings/lastReset').remove();
+        }
+        log('リセット時刻記録を削除');
+
+        updateStatus('✅ リセット完了！', true);
+        log('✅ 全データのリセットが完了しました');
+        log('メインアプリをリロードしてください');
+
+        setTimeout(() => {
+          if (confirm('リセット完了しました。\n\nメインアプリを開きますか？')) {
+            window.open('./index.html', '_blank');
+          }
+        }, 1000);
+
+      } catch (error) {
+        log('エラー: ' + error.message, true);
+        updateStatus('❌ エラーが発生しました', false);
+      }
+    }
+
+    function clearLocalStorage() {
+      if (!confirm('ローカルストレージのデータを削除しますか？')) {
+        return;
+      }
+
+      log('🗑️ ローカルストレージをクリア...');
+
+      for (let i = 0; i < 4; i++) {
+        localStorage.removeItem('heater-employees-' + i);
+      }
+      localStorage.removeItem('heater-last-reset');
+
+      log('✅ ローカルストレージをクリアしました');
+      updateStatus('✅ ローカルデータクリア完了', true);
+    }
+
+    async function checkStatus() {
+      log('📊 現在の状態を確認中...');
+
+      const lastReset = localStorage.getItem('heater-last-reset');
+      log(`最終リセット日時: ${lastReset || '未設定'}`);
+
+      const factoryNames = ['第一工場', '第二工場', '第三工場', '第四工場'];
+      for (let i = 0; i < 4; i++) {
+        const local = localStorage.getItem('heater-employees-' + i);
+        const localData = local ? JSON.parse(local) : [];
+        log(`${factoryNames[i]}: ${localData.length}名`);
+
+        if (db) {
+          const snapshot = await db.ref('factories/' + i + '/employees').once('value');
+          const firebaseData = snapshot.val() || [];
+          log(`  └ Firebase: ${firebaseData.length}名`);
+        }
+      }
+
+      log('✅ 状態確認完了');
+    }
+
+    // 初期状態確認
+    window.addEventListener('load', () => {
+      log('管理画面を読み込みました');
+      log('準備完了');
+    });
+  </script>
+</body>
+</html>
