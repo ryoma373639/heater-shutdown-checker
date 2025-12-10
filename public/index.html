@@ -237,12 +237,29 @@ function checkAndResetDaily() {
   // AM3時以降で、かつ前回のリセットが今日でない場合にリセット
   if (currentHour >= 3 && lastReset !== today) {
     console.log('🔄 AM3時リセット実行中...');
-    console.log('📝 社員リストとチェック状態を全てクリアします');
+    console.log('📝 チェック状態と「再使用」で追加された社員をクリアします');
 
-    // 全工場の社員リストを空にする
+    // 全工場をリセット
     for (var f = 0; f < factoryNames.length; f++) {
-      // 社員リストを空の配列にリセット
-      allEmployees[f] = [];
+      var employees = allEmployees[f] || [];
+      var resetEmployees = [];
+
+      // type が 'permanent' の社員は残す（チェックだけリセット）
+      // type が 'temporary' または未設定の社員は削除
+      for (var i = 0; i < employees.length; i++) {
+        var emp = employees[i];
+        if (emp.type === 'permanent') {
+          // 永続的な社員は残す（チェックだけリセット）
+          emp.checked = false;
+          resetEmployees.push(emp);
+          console.log('✅ 残す: ' + emp.name + ' (追加ボタンで登録)');
+        } else {
+          // 一時的な社員（再使用）は削除
+          console.log('🗑️ 削除: ' + emp.name + ' (再使用ボタンで登録)');
+        }
+      }
+
+      allEmployees[f] = resetEmployees;
 
       // localStorageに保存
       var key = 'heater-employees-' + f;
@@ -252,7 +269,7 @@ function checkAndResetDaily() {
       if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
         try {
           var db = getDatabase();
-          db.ref('factories/' + f + '/employees').set([]);
+          db.ref('factories/' + f + '/employees').set(allEmployees[f]);
           console.log('🔥 Firebase工場' + (f + 1) + 'をリセット');
         } catch (e) {
           console.warn('Firebaseリセット保存スキップ:', e);
@@ -271,7 +288,7 @@ function checkAndResetDaily() {
     // UIを更新
     renderEmployeeList();
 
-    console.log('✅ リセット完了 - 全ての社員リストとチェックをクリアしました');
+    console.log('✅ リセット完了 - 再使用の社員を削除、追加の社員は維持しました');
   } else {
     console.log('ℹ️ リセット不要（条件: AM3時以降 かつ 今日未実行）');
   }
@@ -344,6 +361,7 @@ function addEmployee() {
       newEmp.id = Date.now();
       newEmp.name = name;
       newEmp.checked = false;
+      newEmp.type = 'permanent'; // 「追加」ボタンは永続的（削除しない）
       employees.push(newEmp);
       saveData();
       renderEmployeeList();
@@ -370,13 +388,14 @@ function reuseEmployee() {
   var nameInput = document.getElementById('reuseNameInput');
   var number = numberInput.value.trim();
   var name = nameInput.value.trim();
-  
+
   if (number && name) {
     var employees = getEmployees();
     var newEmp = new Object();
     newEmp.id = Date.now();
     newEmp.name = number + ' ' + name;
     newEmp.checked = false;
+    newEmp.type = 'temporary'; // 「再使用」ボタンは一時的（AM3時に削除）
     employees.push(newEmp);
     saveData();
     renderEmployeeList();
