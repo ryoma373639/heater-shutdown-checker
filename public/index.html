@@ -248,14 +248,16 @@ function checkAndResetDaily() {
       // type が 'temporary' または未設定の社員は削除
       for (var i = 0; i < employees.length; i++) {
         var emp = employees[i];
-        if (emp.type === 'permanent') {
-          // 永続的な社員は残す（チェックだけリセット）
-          emp.checked = false;
-          resetEmployees.push(emp);
-          console.log('✅ 残す: ' + emp.name + ' (追加ボタンで登録)');
-        } else {
+        // typeが'temporary'（再使用ボタン）の場合のみ削除
+        // typeがない（既存データ）または'permanent'（追加ボタン）の場合は残す
+        if (emp.type === 'temporary') {
           // 一時的な社員（再使用）は削除
           console.log('🗑️ 削除: ' + emp.name + ' (再使用ボタンで登録)');
+        } else {
+          // 永続的な社員、または既存データは残す（チェックだけリセット）
+          emp.checked = false;
+          resetEmployees.push(emp);
+          console.log('✅ 残す: ' + emp.name + ' (追加ボタンで登録 or 既存データ)');
         }
       }
 
