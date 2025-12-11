@@ -75,8 +75,8 @@
         🔄 全データを今すぐリセット
       </button>
 
-      <button class="btn-warning" onclick="clearLocalStorage()">
-        🗑️ ローカルデータをクリア
+      <button class="btn-warning" onclick="selectiveReset()">
+        ✨ 選択的リセット実行
       </button>
 
       <button class="btn-info" onclick="checkStatus()">
@@ -164,20 +164,78 @@
       }
     }
 
-    function clearLocalStorage() {
-      if (!confirm('ローカルストレージのデータを削除しますか？')) {
+    async function selectiveReset() {
+      if (!confirm('選択的リセットを実行しますか？\n\n【実行内容】\n✅ 全てのチェックボックスをリセット\n🗑️ 「再使用」ボタンで追加した社員を削除\n✅ 「追加」ボタンで追加した社員は残す')) {
         return;
       }
 
-      log('🗑️ ローカルストレージをクリア...');
+      log('✨ 選択的リセット開始...');
+      updateStatus('🔄 選択的リセット実行中...', false);
 
-      for (let i = 0; i < 4; i++) {
-        localStorage.removeItem('heater-employees-' + i);
+      try {
+        const factoryNames = ['第一工場', '第二工場', '第三工場', '第四工場'];
+        let totalDeleted = 0;
+        let totalKept = 0;
+
+        for (let i = 0; i < 4; i++) {
+          // localStorageから現在のデータを取得
+          const key = 'heater-employees-' + i;
+          const data = localStorage.getItem(key);
+          const employees = data ? JSON.parse(data) : [];
+
+          const resetEmployees = [];
+          let deleted = 0;
+          let kept = 0;
+
+          // typeが'temporary'の社員のみ削除、それ以外は残す
+          for (let j = 0; j < employees.length; j++) {
+            const emp = employees[j];
+            if (emp.type === 'temporary') {
+              deleted++;
+              log(`  🗑️ 削除: ${emp.name} (${factoryNames[i]})`);
+            } else {
+              emp.checked = false; // チェックボックスをリセット
+              resetEmployees.push(emp);
+              kept++;
+              log(`  ✅ 残す: ${emp.name} (${factoryNames[i]})`);
+            }
+          }
+
+          totalDeleted += deleted;
+          totalKept += kept;
+
+          // localStorageに保存
+          localStorage.setItem(key, JSON.stringify(resetEmployees));
+          log(`${factoryNames[i]}: 削除${deleted}名、保持${kept}名`);
+
+          // Firebaseにも保存
+          if (db) {
+            await db.ref('factories/' + i + '/employees').set(resetEmployees);
+            log(`  └ Firebase同期完了`);
+          }
+        }
+
+        // リセット時刻を記録
+        const now = new Date().toISOString();
+        localStorage.setItem('heater-last-reset', now);
+        if (db) {
+          await db.ref('settings/lastReset').set(now);
+        }
+
+        log(`\n✅ 選択的リセット完了！`);
+        log(`合計: 削除${totalDeleted}名、保持${totalKept}名`);
+        updateStatus('✅ 選択的リセット完了', true);
+
+        setTimeout(() => {
+          if (confirm('リセット完了しました。\n\nメインアプリを開いて確認しますか？')) {
+            window.open('./index.html', '_blank');
+          }
+        }, 1000);
+
+      } catch (error) {
+        log('エラー: ' + error.message, true);
+        updateStatus('❌ エラーが発生しました', false);
       }
-      localStorage.removeItem('heater-last-reset');
-
-      log('✅ ローカルストレージをクリアしました');
-      updateStatus('✅ ローカルデータクリア完了', true);
     }
 
     async function checkStatus() {
