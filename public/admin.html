@@ -64,7 +64,7 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>🔧 管理画面</h1>
+      <h1>管理画面</h1>
       <p class="subtitle">灯油ストーブ消火確認アプリ - データ管理</p>
 
       <div id="status" class="status warning">
@@ -72,20 +72,20 @@
       </div>
 
       <button class="btn-danger" onclick="forceResetAll()">
-        🔄 全データを今すぐリセット
+        全データを今すぐリセット
       </button>
 
       <button class="btn-warning" onclick="selectiveReset()">
-        ⚡ 手動リセット
+        手動リセット
       </button>
 
       <button class="btn-info" onclick="checkStatus()">
-        📊 現在の状態を確認
+        現在の状態を確認
       </button>
     </div>
 
     <div class="card">
-      <h2 style="margin-bottom: 15px; font-size: 18px;">📝 ログ</h2>
+      <h2 style="margin-bottom: 15px; font-size: 18px;">ログ</h2>
       <div id="log">ログが表示されます...</div>
     </div>
   </div>
@@ -96,8 +96,8 @@
     function log(msg, isError = false) {
       const logDiv = document.getElementById('log');
       const timestamp = new Date().toLocaleTimeString('ja-JP');
-      const prefix = isError ? '❌' : '✅';
-      logDiv.textContent += `[${timestamp}] ${prefix} ${msg}\n`;
+      const prefix = isError ? '[ERROR]' : '[INFO]';
+      logDiv.textContent += '[' + timestamp + '] ' + prefix + ' ' + msg + '\n';
       logDiv.scrollTop = logDiv.scrollHeight;
       console.log(msg);
     }
@@ -113,64 +113,60 @@
       initFirebase();
       if (typeof getDatabase === 'function') {
         db = getDatabase();
-        updateStatus('✅ Firebase接続成功');
+        updateStatus('Firebase接続成功');
         log('Firebase初期化完了');
       }
     }
 
     async function forceResetAll() {
-      if (!confirm('本当に全データをリセットしますか？\n\n・全工場の社員リストが削除されます\n・チェック状態がクリアされます\n・この操作は取り消せません')) {
+      if (!confirm('本当に全データをリセットしますか?\n\n・全工場の社員リストが削除されます\n・チェック状態がクリアされます\n・この操作は取り消せません')) {
         return;
       }
 
-      log('🔄 強制リセット開始...');
-      updateStatus('🔄 リセット実行中...', false);
+      log('[全削除] 強制リセット開始');
+      updateStatus('リセット実行中', false);
 
       try {
-        // 全工場をリセット
         const factoryNames = ['第一工場', '第二工場', '第三工場', '第四工場'];
         for (let i = 0; i < 4; i++) {
-          // Firebase
           if (db) {
             await db.ref('factories/' + i + '/employees').set([]);
-            log(`Firebase: ${factoryNames[i]}をリセット`);
+            log('Firebase: ' + factoryNames[i] + 'をリセット');
           }
 
-          // localStorage
           localStorage.removeItem('heater-employees-' + i);
-          log(`localStorage: ${factoryNames[i]}をクリア`);
+          log('localStorage: ' + factoryNames[i] + 'をクリア');
         }
 
-        // リセット時刻を削除（再リセットを許可）
         localStorage.removeItem('heater-last-reset');
         if (db) {
           await db.ref('settings/lastReset').remove();
         }
         log('リセット時刻記録を削除');
 
-        updateStatus('✅ リセット完了！', true);
-        log('✅ 全データのリセットが完了しました');
+        updateStatus('[完了] リセット完了', true);
+        log('[完了] 全データのリセットが完了しました');
         log('メインアプリをリロードしてください');
 
-        setTimeout(() => {
-          if (confirm('リセット完了しました。\n\nメインアプリを開きますか？')) {
+        setTimeout(function() {
+          if (confirm('リセット完了しました。\n\nメインアプリを開きますか?')) {
             window.open('./index.html', '_blank');
           }
         }, 1000);
 
       } catch (error) {
-        log('エラー: ' + error.message, true);
-        updateStatus('❌ エラーが発生しました', false);
+        log('[エラー] ' + error.message, true);
+        updateStatus('[エラー] エラーが発生しました', false);
       }
     }
 
     async function selectiveReset() {
-      if (!confirm('手動リセットを実行しますか?\n\n[実行内容]\n・全てのチェックボックスをリセット\n・「再使用」ボタンで追加した社員を削除\n・「追加」ボタンで追加した社員は残す\n\n※AM3時の自動リセットと同じ処理です')) {
+      if (!confirm('手動リセットを実行しますか?\n\n[実行内容]\n・全てのチェックボックスをリセット\n・「再使用」ボタンで追加した社員を削除\n・「追加」ボタンで追加した社員は残す\n\nAM3時の自動リセットと同じ処理です')) {
         return;
       }
 
-      log('[手動リセット] 開始...');
-      updateStatus('リセット実行中...', false);
+      log('[手動リセット] 開始');
+      updateStatus('リセット実行中', false);
 
       try {
         const factoryNames = ['第一工場', '第二工場', '第三工場', '第四工場'];
@@ -178,29 +174,37 @@
         let totalKept = 0;
 
         for (let i = 0; i < 4; i++) {
-          // localStorageから現在のデータを取得
           const key = 'heater-employees-' + i;
           const data = localStorage.getItem(key);
           const employees = data ? JSON.parse(data) : [];
 
-          log(`\n【${factoryNames[i]}】処理開始 (現在${employees.length}名)`);
+          log('\n[' + factoryNames[i] + '] 処理開始 (現在' + employees.length + '名)');
 
           const resetEmployees = [];
           let deleted = 0;
           let kept = 0;
 
+          // デバッグ: 全社員のtypeを確認
+          for (let j = 0; j < employees.length; j++) {
+            const emp = employees[j];
+            log('  社員' + (j+1) + ': ' + emp.name + ' / type=' + (emp.type || 'なし') + ' / checked=' + (emp.checked ? 'true' : 'false'));
+          }
+
           // typeが'temporary'の社員のみ削除、それ以外は残す
           for (let j = 0; j < employees.length; j++) {
             const emp = employees[j];
+
             if (emp.type === 'temporary') {
+              // 再使用ボタンで追加された社員 -> 削除
               deleted++;
-              log(`  [削除] ${emp.name} (再使用ボタンで登録)`);
+              log('  [削除] ' + emp.name + ' (type=temporary, 再使用ボタン)');
             } else {
-              emp.checked = false; // チェックボックスをリセット
+              // 追加ボタンで追加された社員 or 既存データ -> チェックだけリセットして残す
+              emp.checked = false;
               resetEmployees.push(emp);
               kept++;
-              const typeLabel = emp.type === 'permanent' ? '追加ボタン' : '既存データ';
-              log(`  [保持] ${emp.name} (${typeLabel})`);
+              const typeLabel = emp.type === 'permanent' ? 'permanent,追加ボタン' : 'なし,既存データ';
+              log('  [保持] ' + emp.name + ' (type=' + typeLabel + ')');
             }
           }
 
@@ -209,18 +213,18 @@
 
           // localStorageに保存
           localStorage.setItem(key, JSON.stringify(resetEmployees));
-          log(`${factoryNames[i]}: 削除${deleted}名、保持${kept}名 → 合計${resetEmployees.length}名`);
+          log(factoryNames[i] + ': 削除' + deleted + '名、保持' + kept + '名 (合計' + resetEmployees.length + '名)');
 
           // Firebaseにも保存
           if (db) {
             try {
               await db.ref('factories/' + i + '/employees').set(resetEmployees);
-              log(`  Firebase同期完了`);
+              log('  Firebase同期完了');
             } catch (e) {
-              log(`  [警告] Firebase同期エラー: ${e.message}`, true);
+              log('  [警告] Firebase同期エラー: ' + e.message, true);
             }
           } else {
-            log(`  [警告] Firebaseは未接続 (localStorage のみ更新)`);
+            log('  [警告] Firebase未接続 (localStorageのみ更新)');
           }
         }
 
@@ -232,17 +236,17 @@
           try {
             await db.ref('settings/lastReset').set(now);
           } catch (e) {
-            log(`リセット時刻のFirebase保存エラー: ${e.message}`, true);
+            log('リセット時刻のFirebase保存エラー: ' + e.message, true);
           }
         }
 
-        log(`\n[完了] 手動リセット完了!`);
-        log(`実行日時: ${nowJST}`);
-        log(`合計: 削除${totalDeleted}名、保持${totalKept}名`);
+        log('\n[完了] 手動リセット完了');
+        log('実行日時: ' + nowJST);
+        log('合計: 削除' + totalDeleted + '名、保持' + totalKept + '名');
         updateStatus('[完了] 手動リセット完了', true);
 
-        setTimeout(() => {
-          alert('リセット完了しました。\n\nメインアプリを開いている場合は、\nページをリロード（更新）してください。');
+        setTimeout(function() {
+          alert('リセット完了しました。\n\nメインアプリを開いている場合は、\nページをリロード(更新)してください。');
         }, 500);
 
       } catch (error) {
@@ -253,25 +257,31 @@
     }
 
     async function checkStatus() {
-      log('📊 現在の状態を確認中...');
+      log('[状態確認] 開始');
 
       const lastReset = localStorage.getItem('heater-last-reset');
-      log(`最終リセット日時: ${lastReset || '未設定'}`);
+      log('最終リセット日時: ' + (lastReset || '未設定'));
 
       const factoryNames = ['第一工場', '第二工場', '第三工場', '第四工場'];
       for (let i = 0; i < 4; i++) {
         const local = localStorage.getItem('heater-employees-' + i);
         const localData = local ? JSON.parse(local) : [];
-        log(`${factoryNames[i]}: ${localData.length}名`);
+        log(factoryNames[i] + ': ' + localData.length + '名');
+
+        // 各社員のtypeも表示
+        for (let j = 0; j < localData.length; j++) {
+          const emp = localData[j];
+          log('  ' + (j+1) + '. ' + emp.name + ' (type=' + (emp.type || 'なし') + ', checked=' + (emp.checked ? 'ON' : 'OFF') + ')');
+        }
 
         if (db) {
           const snapshot = await db.ref('factories/' + i + '/employees').once('value');
           const firebaseData = snapshot.val() || [];
-          log(`  └ Firebase: ${firebaseData.length}名`);
+          log('  Firebase: ' + firebaseData.length + '名');
         }
       }
 
-      log('✅ 状態確認完了');
+      log('[完了] 状態確認完了');
     }
 
     // 初期状態確認
