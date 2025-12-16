@@ -86,7 +86,13 @@
         <div class="icon-box">🔥</div>
         <div style="flex: 1;"><h1>灯油ストーブ消火確認</h1><p class="subtitle">火器安全管理システム</p></div>
       </div>
-      <div class="info-box"><p style="color: #1e40af;"><strong>毎日AM3時に自動リセット</strong> されます。退社時に必ずチェックしてください。</p></div>
+      <div class="info-box">
+        <p style="color: #1e40af;"><strong>毎日AM3時に自動リセット</strong> されます。退社時に必ずチェックしてください。</p>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 8px;" id="resetInfo">最終リセット: 未実行</p>
+        <p style="font-size: 11px; margin-top: 8px;" id="firebaseStatus">
+          <span style="color: #f59e0b;">🔄 接続確認中...</span>
+        </p>
+      </div>
     </div>
     
     <div class="tabs">
@@ -128,21 +134,51 @@ var currentTab = 0;
 
 function init() {
   // Firebaseを初期化（存在する場合のみ）
+  var firebaseInitialized = false;
   if (typeof initFirebase === 'function') {
     try {
-      initFirebase();
+      firebaseInitialized = initFirebase();
+      updateFirebaseStatus(firebaseInitialized);
     } catch (e) {
       console.warn('Firebase初期化をスキップ:', e);
+      updateFirebaseStatus(false);
     }
+  } else {
+    updateFirebaseStatus(false);
   }
 
   loadData();
   checkAndResetDaily();
   renderEmployeeList();
+  updateResetInfo();
 
   // Firebase同期リスナーをセットアップ
   if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
     setupFirebaseListeners();
+  }
+}
+
+function updateFirebaseStatus(isConnected) {
+  var statusElement = document.getElementById('firebaseStatus');
+  if (!statusElement) return;
+
+  if (isConnected) {
+    statusElement.innerHTML = '<span style="color: #10b981;">✅ リアルタイム同期: 有効（全デバイス連動）</span>';
+  } else {
+    statusElement.innerHTML = '<span style="color: #6b7280;">📱 ローカルモード: このデバイスのみ</span>';
+  }
+}
+
+function updateResetInfo() {
+  var lastReset = localStorage.getItem('heater-last-reset');
+  var infoElement = document.getElementById('resetInfo');
+  if (infoElement) {
+    if (lastReset) {
+      var resetDate = new Date(lastReset);
+      infoElement.textContent = '最終リセット: ' + resetDate.toLocaleString('ja-JP');
+    } else {
+      infoElement.textContent = '最終リセット: 未実行';
+    }
   }
 }
 
