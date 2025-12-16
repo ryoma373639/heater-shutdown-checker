@@ -86,7 +86,10 @@
         <div class="icon-box">🔥</div>
         <div style="flex: 1;"><h1>灯油ストーブ消火確認</h1><p class="subtitle">火器安全管理システム</p></div>
       </div>
-      <div class="info-box"><p style="color: #1e40af;"><strong>毎日AM3時に自動リセット</strong> されます。退社時に必ずチェックしてください。</p></div>
+      <div class="info-box">
+        <p style="color: #1e40af;"><strong>毎日AM3時に自動リセット</strong> されます。退社時に必ずチェックしてください。</p>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 8px;" id="resetInfo">最終リセット: 未実行</p>
+      </div>
     </div>
     
     <div class="tabs">
@@ -118,6 +121,12 @@
     <div class="card">
       <button class="btn btn-success" onclick="handleFinalCheck()">✓ 最終確認・完了</button>
     </div>
+    <div class="card">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn" style="flex: 1; background: #dc2626; color: white;" onclick="manualReset()">🔄 手動リセット（テスト用）</button>
+        <button class="btn" style="flex: 1; background: #6b7280; color: white;" onclick="showDebugInfo()">🐛 デバッグ情報</button>
+      </div>
+    </div>
   </div>
   <div class="modal" id="warningModal"><div class="modal-content" id="modalContent"></div></div>
 
@@ -139,10 +148,21 @@ function init() {
   loadData();
   checkAndResetDaily();
   renderEmployeeList();
+  updateResetInfo();
 
   // Firebase同期リスナーをセットアップ
   if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
     setupFirebaseListeners();
+  }
+}
+
+function updateResetInfo() {
+  var lastReset = localStorage.getItem('heater-last-reset');
+  var infoElement = document.getElementById('resetInfo');
+  if (lastReset) {
+    infoElement.textContent = '最終リセット: ' + lastReset;
+  } else {
+    infoElement.textContent = '最終リセット: 未実行';
   }
 }
 
@@ -236,66 +256,129 @@ function checkAndResetDaily() {
 
   // AM3時以降で、かつ前回のリセットが今日でない場合にリセット
   if (currentHour >= 3 && lastReset !== today) {
-    console.log('🔄 AM3時リセット実行中...');
-    console.log('📝 チェック状態と「再使用」で追加された社員をクリアします');
-
-    // 全工場をリセット
-    for (var f = 0; f < factoryNames.length; f++) {
-      var employees = allEmployees[f] || [];
-      var resetEmployees = [];
-
-      // type が 'permanent' の社員は残す（チェックだけリセット）
-      // type が 'temporary' または未設定の社員は削除
-      for (var i = 0; i < employees.length; i++) {
-        var emp = employees[i];
-        // typeが'temporary'（再使用ボタン）の場合のみ削除
-        // typeがない（既存データ）または'permanent'（追加ボタン）の場合は残す
-        if (emp.type === 'temporary') {
-          // 一時的な社員（再使用）は削除
-          console.log('🗑️ 削除: ' + emp.name + ' (再使用ボタンで登録)');
-        } else {
-          // 永続的な社員、または既存データは残す（チェックだけリセット）
-          emp.checked = false;
-          resetEmployees.push(emp);
-          console.log('✅ 残す: ' + emp.name + ' (追加ボタンで登録 or 既存データ)');
-        }
-      }
-
-      allEmployees[f] = resetEmployees;
-
-      // localStorageに保存
-      var key = 'heater-employees-' + f;
-      localStorage.setItem(key, JSON.stringify(allEmployees[f]));
-
-      // Firebaseにもリセットを保存
-      if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
-        try {
-          var db = getDatabase();
-          db.ref('factories/' + f + '/employees').set(allEmployees[f]);
-          console.log('🔥 Firebase工場' + (f + 1) + 'をリセット');
-        } catch (e) {
-          console.warn('Firebaseリセット保存スキップ:', e);
-        }
-      }
-    }
-
-    // リセット日時を記録
-    localStorage.setItem('heater-last-reset', today);
-
-    // Firebaseにリセット時刻を保存
-    if (typeof syncResetToFirebase === 'function') {
-      syncResetToFirebase();
-    }
-
-    // UIを更新
-    renderEmployeeList();
-
-    console.log('✅ リセット完了 - 再使用の社員を削除、追加の社員は維持しました');
+    performReset(today);
   } else {
     console.log('ℹ️ リセット不要（条件: AM3時以降 かつ 今日未実行）');
   }
 
   setTimeout(checkAndResetDaily, 60000);
+}
+
+function performReset(today) {
+  console.log('🔄 リセット実行中...');
+  console.log('📝 「再使用」で追加された社員を削除し、「追加」の社員はチェックのみリセット');
+
+  var totalDeleted = 0;
+  var totalKept = 0;
+
+  // 全工場をリセット
+  for (var f = 0; f < factoryNames.length; f++) {
+    var employees = allEmployees[f] || [];
+    var resetEmployees = [];
+    var deletedCount = 0;
+    var keptCount = 0;
+
+    console.log('--- ' + factoryNames[f] + ' ---');
+    console.log('リセット前の社員数:', employees.length);
+
+    for (var i = 0; i < employees.length; i++) {
+      var emp = employees[i];
+
+      // typeプロパティがない場合は 'permanent' として扱う（既存データの互換性）
+      if (!emp.type) {
+        emp.type = 'permanent';
+        console.log('⚠️ typeが未設定: ' + emp.name + ' → permanent として扱います');
+      }
+
+      if (emp.type === 'temporary') {
+        // 一時的な社員（再使用ボタン）は削除
+        console.log('🗑️ 削除: ' + emp.name + ' (type: temporary)');
+        deletedCount++;
+      } else {
+        // 永続的な社員は残す（チェックだけリセット）
+        emp.checked = false;
+        resetEmployees.push(emp);
+        console.log('✅ 保持: ' + emp.name + ' (type: ' + emp.type + ')');
+        keptCount++;
+      }
+    }
+
+    console.log('削除: ' + deletedCount + '名, 保持: ' + keptCount + '名');
+    totalDeleted += deletedCount;
+    totalKept += keptCount;
+
+    allEmployees[f] = resetEmployees;
+
+    // localStorageに保存
+    var key = 'heater-employees-' + f;
+    localStorage.setItem(key, JSON.stringify(allEmployees[f]));
+
+    // Firebaseにもリセットを保存
+    if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
+      try {
+        var db = getDatabase();
+        db.ref('factories/' + f + '/employees').set(allEmployees[f]);
+        console.log('🔥 Firebase工場' + (f + 1) + 'をリセット');
+      } catch (e) {
+        console.warn('Firebaseリセット保存スキップ:', e);
+      }
+    }
+  }
+
+  // リセット日時を記録
+  localStorage.setItem('heater-last-reset', today);
+
+  // Firebaseにリセット時刻を保存
+  if (typeof syncResetToFirebase === 'function') {
+    syncResetToFirebase();
+  }
+
+  // UIを更新
+  renderEmployeeList();
+  updateResetInfo();
+
+  console.log('✅ リセット完了 - 削除: ' + totalDeleted + '名, 保持: ' + totalKept + '名');
+  alert('🔄 リセット完了\n\n削除（再使用）: ' + totalDeleted + '名\n保持（追加）: ' + totalKept + '名');
+}
+
+function manualReset() {
+  if (confirm('⚠️ 手動リセットを実行しますか？\n\n「再使用」で追加した社員が削除され、「追加」の社員のチェックがリセットされます。')) {
+    var today = new Date().toDateString();
+    performReset(today);
+  }
+}
+
+function showDebugInfo() {
+  var employees = getEmployees();
+  var debugInfo = '🐛 デバッグ情報\n\n';
+  debugInfo += '工場: ' + factoryNames[currentTab] + '\n';
+  debugInfo += '社員数: ' + employees.length + '名\n\n';
+
+  var permanentCount = 0;
+  var temporaryCount = 0;
+  var unknownCount = 0;
+
+  for (var i = 0; i < employees.length; i++) {
+    var emp = employees[i];
+    var typeLabel = emp.type || '未設定';
+    debugInfo += (i + 1) + '. ' + emp.name + '\n';
+    debugInfo += '   type: ' + typeLabel + '\n';
+    debugInfo += '   checked: ' + (emp.checked ? 'はい' : 'いいえ') + '\n\n';
+
+    if (emp.type === 'permanent') permanentCount++;
+    else if (emp.type === 'temporary') temporaryCount++;
+    else unknownCount++;
+  }
+
+  debugInfo += '--- 統計 ---\n';
+  debugInfo += '追加ボタン（permanent）: ' + permanentCount + '名\n';
+  debugInfo += '再使用ボタン（temporary）: ' + temporaryCount + '名\n';
+  debugInfo += 'type未設定: ' + unknownCount + '名\n\n';
+
+  var lastReset = localStorage.getItem('heater-last-reset') || '未実行';
+  debugInfo += '最終リセット: ' + lastReset;
+
+  alert(debugInfo);
 }
 
 function switchTab(index) {
