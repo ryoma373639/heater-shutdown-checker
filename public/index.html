@@ -124,6 +124,13 @@
     <div class="card">
       <button class="btn btn-success" onclick="handleFinalCheck()">✓ 最終確認・完了</button>
     </div>
+    <div class="card" style="background: #f3f4f6;">
+      <div class="section-title" style="font-size: 14px; color: #6b7280;">🔧 デバッグ・テスト機能</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+        <button class="btn btn-primary" style="flex: 1; min-width: 140px; font-size: 13px;" onclick="testFirebaseSync()">🔄 同期テスト</button>
+        <button class="btn" style="flex: 1; min-width: 140px; background: #6b7280; color: white; font-size: 13px;" onclick="showDebugInfo()">🐛 接続情報</button>
+      </div>
+    </div>
   </div>
   <div class="modal" id="warningModal"><div class="modal-content" id="modalContent"></div></div>
 
@@ -489,6 +496,85 @@ function setupEvents() {
     }
   };
   init();
+}
+
+// デバッグ・テスト機能
+function testFirebaseSync() {
+  console.log('🔄 Firebase同期テスト開始...');
+
+  var isConnected = typeof isFirebaseConnected === 'function' && isFirebaseConnected();
+
+  if (!isConnected) {
+    alert('❌ Firebase未接続\n\nFirebase同期が無効です。\nローカルストレージモードで動作しています。\n\n詳細はブラウザコンソールを確認してください。');
+    console.error('Firebase接続失敗');
+    return;
+  }
+
+  try {
+    var db = getDatabase();
+    var testData = {
+      name: 'テスト同期_' + new Date().toLocaleTimeString('ja-JP'),
+      checked: false,
+      type: 'temporary',
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('テストデータを書き込み中...', testData);
+
+    db.ref('test/syncTest').set(testData)
+      .then(function() {
+        console.log('✅ 書き込み成功');
+
+        return db.ref('test/syncTest').once('value');
+      })
+      .then(function(snapshot) {
+        var readData = snapshot.val();
+        console.log('✅ 読み込み成功', readData);
+
+        alert('✅ 同期テスト成功！\n\nFirebaseとの通信が正常に動作しています。\n\n書き込んだデータ:\n' + JSON.stringify(readData, null, 2));
+      })
+      .catch(function(error) {
+        console.error('❌ 同期エラー:', error);
+        alert('❌ 同期エラー\n\n' + error.message);
+      });
+
+  } catch (e) {
+    console.error('❌ テスト実行エラー:', e);
+    alert('❌ テスト実行エラー\n\n' + e.message);
+  }
+}
+
+function showDebugInfo() {
+  var info = '🔧 Firebase接続情報\n\n';
+
+  var isConnected = typeof isFirebaseConnected === 'function' && isFirebaseConnected();
+
+  info += '接続状態: ' + (isConnected ? '✅ 接続中' : '❌ 未接続') + '\n';
+  info += 'Firebase SDK: ' + (typeof firebase !== 'undefined' ? '✅ 読み込み済み' : '❌ 未読み込み') + '\n';
+  info += 'データベース: ' + (typeof getDatabase === 'function' && getDatabase() !== null ? '✅ 初期化済み' : '❌ 未初期化') + '\n\n';
+
+  info += '--- ローカルデータ ---\n';
+  info += '工場: ' + factoryNames[currentTab] + '\n';
+  var employees = getEmployees();
+  info += '社員数: ' + employees.length + '名\n\n';
+
+  for (var i = 0; i < Math.min(employees.length, 5); i++) {
+    var emp = employees[i];
+    info += (i + 1) + '. ' + emp.name + '\n';
+    info += '   type: ' + (emp.type || 'なし') + '\n';
+    info += '   checked: ' + (emp.checked ? 'ON' : 'OFF') + '\n';
+  }
+
+  if (employees.length > 5) {
+    info += '... 他' + (employees.length - 5) + '名\n';
+  }
+
+  info += '\n--- 設定 ---\n';
+  info += 'プロジェクト: heater-checker\n';
+  info += 'リージョン: asia-southeast1\n';
+
+  console.log(info);
+  alert(info);
 }
 
 if (window.addEventListener) {
