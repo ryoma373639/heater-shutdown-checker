@@ -16,66 +16,853 @@
   <script src="./firebase-config.js"></script>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: sans-serif; background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); min-height: 100vh; padding: 12px; }
-    .container { max-width: 900px; margin: 0 auto; }
-    .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 16px; margin-bottom: 16px; }
-    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-    .icon-box { background: #ef4444; padding: 10px; border-radius: 8px; font-size: 20px; }
-    h1 { font-size: 20px; color: #1f2937; }
-    .subtitle { font-size: 12px; color: #6b7280; }
-    .info-box { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 6px; margin-top: 12px; font-size: 13px; }
-    
-    .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
-    .tab { padding: 12px 16px; border: none; border-radius: 8px 8px 0 0; font-weight: 600; cursor: pointer; font-size: 14px; background: #e5e7eb; color: #6b7280; flex: 1; min-width: 80px; text-align: center; }
-    .tab.active { background: #ef4444; color: white; }
-    
-    .input-group { display: flex; gap: 8px; margin-top: 12px; }
-    input[type="text"] { flex: 1; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; }
-    .btn { padding: 12px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-yellow { background: #f59e0b; color: white; padding: 12px 20px; }
-    .btn-success { background: #10b981; color: white; font-size: 16px; padding: 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .reuse-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .reuse-input { flex: 1; min-width: 120px; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; }
-    .reuse-number { width: 70px; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; text-align: center; }
-    
-    .stats { display: flex; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-    .stats h2 { font-size: 16px; }
-    .stats-text { font-size: 13px; color: #6b7280; }
-    .employee-list { max-height: 400px; overflow-y: auto; }
-    .employee-item { display: flex; align-items: center; gap: 10px; padding: 14px 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
-    .employee-item.checked { background: #f0fdf4; border-color: #86efac; }
-    input[type="checkbox"] { width: 28px; height: 28px; cursor: pointer; flex-shrink: 0; }
-    .employee-name { flex: 1; font-size: 16px; color: #1f2937; font-weight: 500; word-break: break-word; }
-    .employee-name.checked { color: #9ca3af; text-decoration: line-through; }
-    .btn-delete { padding: 10px 16px; background: #fee2e2; border: none; color: #ef4444; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
-    .modal.show { display: flex; }
-    .modal-content { background: white; border-radius: 16px; padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .modal-icon { padding: 12px; border-radius: 50%; flex-shrink: 0; }
-    .modal-icon.warning { background: #ef4444; }
-    .modal-icon.success { background: #10b981; }
-    .modal-title { font-size: 18px; font-weight: bold; }
-    .modal-title.warning { color: #dc2626; }
-    .modal-title.success { color: #059669; }
-    .unchecked-list { background: #fee2e2; border: 2px solid #fca5a5; border-radius: 8px; padding: 16px; margin: 16px 0; max-height: 200px; overflow-y: auto; }
-    .unchecked-item { display: flex; align-items: center; gap: 8px; color: #991b1b; font-weight: 500; margin-bottom: 8px; font-size: 15px; }
-    .dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; flex-shrink: 0; }
-    .success-box { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 24px; text-align: center; margin: 16px 0; }
-    .success-emoji { font-size: 48px; margin-bottom: 8px; }
-    .btn-modal { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; }
-    .btn-modal.dark { background: #1f2937; color: white; }
-    .btn-modal.success { background: #10b981; color: white; }
-    .section-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-    
+    /* ============================================
+       CSS Variables - Modern Color Palette
+       ============================================ */
+    :root {
+      --primary-red: #f43f5e;
+      --primary-red-dark: #e11d48;
+      --primary-red-light: #fb7185;
+      --accent-orange: #fb923c;
+      --accent-yellow: #fbbf24;
+      --success-green: #10b981;
+      --success-green-dark: #059669;
+      --info-blue: #3b82f6;
+      --info-blue-light: #60a5fa;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+
+      --bg-gradient-start: #fff1f2;
+      --bg-gradient-end: #ffe4e6;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+      --transition-fast: 150ms ease-in-out;
+      --transition-normal: 300ms ease-in-out;
+      --transition-slow: 500ms ease-in-out;
+    }
+
+    /* ============================================
+       Reset & Base Styles
+       ============================================ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      padding: 16px;
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ============================================
+       Glassmorphism Cards
+       ============================================ */
+    .card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all var(--transition-normal);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    /* ============================================
+       Header Section
+       ============================================ */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .icon-box {
+      background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3); }
+      50% { box-shadow: 0 4px 20px rgba(244, 63, 94, 0.5); }
+    }
+
+    h1 {
+      font-size: 22px;
+      color: var(--gray-900);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+
+    .info-box {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-left: 4px solid var(--info-blue);
+      padding: 14px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* ============================================
+       Modern Tabs with Animations
+       ============================================ */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    .tab {
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px 12px 0 0;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(8px);
+      color: var(--gray-600);
+      flex: 1;
+      min-width: 90px;
+      text-align: center;
+      transition: all var(--transition-normal);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left var(--transition-slow);
+    }
+
+    .tab:hover::before {
+      left: 100%;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+      transform: translateY(-2px) scale(1.02);
+      border-color: var(--primary-red-light);
+    }
+
+    /* ============================================
+       Form Inputs
+       ============================================ */
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 14px 16px;
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all var(--transition-fast);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--info-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      transform: translateY(-1px);
+    }
+
+    /* 社員の追加フィールド - ブルー */
+    #employeeNumberInput:focus,
+    #employeeNameInput:focus {
+      outline: none;
+      border-color: var(--info-blue) !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+      transform: translateY(-1px);
+    }
+
+    /* ============================================
+       Buttons with Micro-interactions
+       ============================================ */
+    .btn {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all var(--transition-fast);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width var(--transition-normal), height var(--transition-normal);
+    }
+
+    .btn:active::after {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* シャイン効果 - 追加ボタン（ブルー） */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--info-blue) 0%, var(--info-blue-light) 100%);
+      color: white;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.5), transparent);
+      transition: left var(--transition-slow);
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    /* シャイン効果 - 再使用ボタン（イエロー/オレンジ） */
+    .btn-yellow {
+      background: linear-gradient(135deg, var(--accent-yellow) 0%, var(--accent-orange) 100%);
+      color: white;
+      padding: 14px 24px;
+    }
+
+    .btn-yellow::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(252, 211, 77, 0.6), transparent);
+      transition: left var(--transition-slow);
+    }
+
+    .btn-yellow:hover::before {
+      left: 100%;
+    }
+
+    .btn-yellow:hover {
+      box-shadow: 0 6px 16px rgba(251, 191, 36, 0.3);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success-green) 0%, var(--success-green-dark) 100%);
+      color: white;
+      font-size: 17px;
+      padding: 18px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-success:hover {
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .reuse-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .reuse-input {
+      flex: 1;
+      min-width: 130px;
+      padding: 14px 16px;
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all var(--transition-fast);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .reuse-input:focus {
+      outline: none;
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1);
+    }
+
+    .reuse-number {
+      width: 80px;
+      padding: 14px 16px;
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 16px;
+      text-align: center;
+      transition: all var(--transition-fast);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .reuse-number:focus {
+      outline: none;
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1);
+    }
+
+    /* ============================================
+       Progress Bar
+       ============================================ */
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 12px 0;
+      position: relative;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success-green) 0%, var(--info-blue) 100%);
+      border-radius: 10px;
+      transition: width var(--transition-slow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ============================================
+       Statistics Section
+       ============================================ */
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .stats h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .stats-text {
+      font-size: 14px;
+      color: var(--gray-600);
+      background: var(--gray-100);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* ============================================
+       Employee List with Animations
+       ============================================ */
+    .employee-list {
+      max-height: 450px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .employee-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .employee-list::-webkit-scrollbar-track {
+      background: var(--gray-100);
+      border-radius: 10px;
+    }
+
+    .employee-list::-webkit-scrollbar-thumb {
+      background: var(--gray-300);
+      border-radius: 10px;
+    }
+
+    .employee-list::-webkit-scrollbar-thumb:hover {
+      background: var(--gray-400);
+    }
+
+    .employee-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 14px;
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.6);
+      transition: all var(--transition-fast);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* 追加ボタンで登録された社員 - ブルー背景 */
+    .employee-item.type-permanent {
+      background: rgba(219, 234, 254, 0.4);
+      border-color: rgba(96, 165, 250, 0.3);
+    }
+
+    .employee-item.type-permanent:hover {
+      background: rgba(219, 234, 254, 0.6);
+      border-color: rgba(96, 165, 250, 0.5);
+      transform: translateX(4px);
+      box-shadow: var(--shadow);
+    }
+
+    /* 再使用ボタンで登録された社員 - イエロー背景 */
+    .employee-item.type-temporary {
+      background: rgba(254, 243, 199, 0.4);
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+
+    .employee-item.type-temporary:hover {
+      background: rgba(254, 243, 199, 0.6);
+      border-color: rgba(251, 191, 36, 0.5);
+      transform: translateX(4px);
+      box-shadow: var(--shadow);
+    }
+
+    .employee-item:hover {
+      border-color: var(--gray-300);
+      background: rgba(255, 255, 255, 0.9);
+      transform: translateX(4px);
+      box-shadow: var(--shadow);
+    }
+
+    .employee-item.checked {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border-color: var(--success-green);
+      animation: checkPulse 0.5s ease-out;
+    }
+
+    /* チェック済み + type別の背景色 */
+    .employee-item.checked.type-permanent {
+      background: linear-gradient(135deg, #dbeafe 0%, #dcfce7 100%);
+      border-color: var(--success-green);
+    }
+
+    .employee-item.checked.type-temporary {
+      background: linear-gradient(135deg, #fef3c7 0%, #dcfce7 100%);
+      border-color: var(--success-green);
+    }
+
+    @keyframes checkPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+    /* ============================================
+       Custom Checkbox with Animation
+       ============================================ */
+    input[type="checkbox"] {
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      flex-shrink: 0;
+      appearance: none;
+      border: 2px solid var(--gray-300);
+      border-radius: 6px;
+      position: relative;
+      transition: all var(--transition-fast);
+      background: white;
+    }
+
+    input[type="checkbox"]:hover {
+      border-color: var(--success-green);
+      transform: scale(1.1);
+    }
+
+    input[type="checkbox"]:checked {
+      background: linear-gradient(135deg, var(--success-green) 0%, var(--success-green-dark) 100%);
+      border-color: var(--success-green);
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      animation: checkmark 0.3s ease-out;
+    }
+
+    @keyframes checkmark {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(-45deg); }
+      50% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    }
+
+    .employee-name {
+      flex: 1;
+      font-size: 16px;
+      color: var(--gray-900);
+      font-weight: 500;
+      word-break: break-word;
+      transition: all var(--transition-fast);
+    }
+
+    .employee-name.checked {
+      color: var(--gray-400);
+      text-decoration: line-through;
+    }
+
+    .btn-delete {
+      padding: 10px 18px;
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      border: 2px solid transparent;
+      color: var(--primary-red);
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-delete:hover {
+      background: var(--primary-red);
+      color: white;
+      border-color: var(--primary-red-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+    }
+
+    /* ============================================
+       Modal with Fade Animation
+       ============================================ */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 520px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+      animation: modalSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .modal-icon {
+      padding: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      font-size: 24px;
+    }
+
+    .modal-icon.warning {
+      background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+    }
+
+    .modal-icon.success {
+      background: linear-gradient(135deg, var(--success-green) 0%, var(--success-green-dark) 100%);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .modal-title.warning {
+      color: var(--primary-red-dark);
+    }
+
+    .modal-title.success {
+      color: var(--success-green-dark);
+    }
+
+    .unchecked-list {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      border: 2px solid var(--primary-red-light);
+      border-radius: 10px;
+      padding: 18px;
+      margin: 18px 0;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .unchecked-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #991b1b;
+      font-weight: 500;
+      margin-bottom: 10px;
+      font-size: 15px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--primary-red);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+    }
+
+    .success-box {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 2px solid var(--success-green);
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      margin: 18px 0;
+    }
+
+    .success-emoji {
+      font-size: 56px;
+      margin-bottom: 12px;
+      animation: bounce 0.6s ease-out;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      25% { transform: translateY(-10px); }
+      50% { transform: translateY(0); }
+      75% { transform: translateY(-5px); }
+    }
+
+    .btn-modal {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-modal:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-modal.dark {
+      background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+      color: white;
+    }
+
+    .btn-modal.success {
+      background: linear-gradient(135deg, var(--success-green) 0%, var(--success-green-dark) 100%);
+      color: white;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--gray-900);
+    }
+
+    /* ============================================
+       Responsive Design
+       ============================================ */
     @media (max-width: 480px) {
-      .reuse-group { flex-direction: column; }
-      .reuse-number { width: 100%; }
-      .reuse-input { width: 100%; }
-      .btn-yellow { width: 100%; text-align: center; }
-      .tab { padding: 10px 8px; font-size: 12px; }
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .reuse-group {
+        flex-direction: column;
+      }
+
+      .reuse-number {
+        width: 100%;
+      }
+
+      .reuse-input {
+        width: 100%;
+      }
+
+      .btn-yellow {
+        width: 100%;
+        text-align: center;
+      }
+
+      .tab {
+        padding: 12px 10px;
+        font-size: 13px;
+      }
+
+      h1 {
+        font-size: 19px;
+      }
+
+      .icon-box {
+        font-size: 20px;
+        padding: 12px;
+      }
     }
   </style>
 </head>
@@ -104,8 +891,9 @@
     
     <div class="card">
       <div class="section-title">社員の追加</div>
-      <div class="input-group">
-        <input type="text" id="employeeNameInput" placeholder="社員名を入力">
+      <div class="reuse-group">
+        <input type="text" id="employeeNumberInput" class="reuse-number" placeholder="番号">
+        <input type="text" id="employeeNameInput" class="reuse-input" placeholder="自分の名前を入力">
         <button class="btn btn-primary" onclick="addEmployee()">追加</button>
       </div>
     </div>
@@ -119,6 +907,9 @@
     </div>
     <div class="card">
       <div class="stats"><h2 id="listTitle">消火確認リスト (0/0)</h2><span class="stats-text" id="uncheckedCount">未確認: 0名</span></div>
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+      </div>
       <div class="employee-list" id="employeeList"></div>
     </div>
     <div class="card">
@@ -129,6 +920,8 @@
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
         <button class="btn btn-primary" style="flex: 1; min-width: 140px; font-size: 13px;" onclick="testFirebaseSync()">🔄 同期テスト</button>
         <button class="btn" style="flex: 1; min-width: 140px; background: #6b7280; color: white; font-size: 13px;" onclick="showDebugInfo()">🐛 接続情報</button>
+        <button class="btn" style="flex: 1; min-width: 140px; background: #f59e0b; color: white; font-size: 13px;" onclick="debugEmployeeTypes()">🔍 社員TYPE確認</button>
+        <button class="btn" style="flex: 1; min-width: 140px; background: #ef4444; color: white; font-size: 13px;" onclick="testResetFunction()">🧪 リセットテスト</button>
       </div>
     </div>
   </div>
@@ -228,6 +1021,8 @@ function loadFromLocalStorage(factoryIndex) {
     var saved = localStorage.getItem(key);
     if (saved) {
       allEmployees[factoryIndex] = JSON.parse(saved);
+      // マイグレーション: typeがない社員にpermanentを設定
+      migrateEmployeeTypes(factoryIndex);
     } else {
       allEmployees[factoryIndex] = [];
     }
@@ -240,10 +1035,33 @@ function loadFromLocalStorage(factoryIndex) {
       var saved = localStorage.getItem(key);
       if (saved) {
         allEmployees[i] = JSON.parse(saved);
+        // マイグレーション: typeがない社員にpermanentを設定
+        migrateEmployeeTypes(i);
       } else {
         allEmployees[i] = [];
       }
     }
+  }
+}
+
+// マイグレーション: typeプロパティがない既存データにpermanentを設定
+function migrateEmployeeTypes(factoryIndex) {
+  var employees = allEmployees[factoryIndex];
+  var needsSave = false;
+
+  for (var i = 0; i < employees.length; i++) {
+    if (!employees[i].type) {
+      console.log('🔄 マイグレーション: ' + employees[i].name + ' に type=permanent を設定');
+      employees[i].type = 'permanent';
+      needsSave = true;
+    }
+  }
+
+  // マイグレーションした場合は保存
+  if (needsSave) {
+    var key = 'heater-employees-' + factoryIndex;
+    localStorage.setItem(key, JSON.stringify(employees));
+    console.log('💾 工場' + (factoryIndex + 1) + 'のマイグレーションを保存しました');
   }
 }
 
@@ -267,6 +1085,9 @@ function saveData() {
       console.warn('Firebase保存スキップ:', e);
     }
   }
+
+  // データ変更イベントを発火（管理画面への通知）
+  window.dispatchEvent(new Event('dataUpdated'));
 }
 
 function checkAndResetDaily() {
@@ -287,20 +1108,22 @@ function checkAndResetDaily() {
       var employees = allEmployees[f] || [];
       var resetEmployees = [];
 
-      // type が 'permanent' の社員は残す（チェックだけリセット）
-      // type が 'temporary' または未設定の社員は削除
+      // リセットロジック:
+      // - type が 'temporary' (再使用ボタン) → 削除
+      // - type が 'permanent' (追加ボタン) → 残す（チェックのみリセット）
+      // - type が未設定/null/undefined → 残す（チェックのみリセット）※既存データ保護
       for (var i = 0; i < employees.length; i++) {
         var emp = employees[i];
-        // typeが'temporary'（再使用ボタン）の場合のみ削除
-        // typeがない（既存データ）または'permanent'（追加ボタン）の場合は残す
+
+        // 明示的にtemporaryの場合のみ削除
         if (emp.type === 'temporary') {
-          // 一時的な社員（再使用）は削除
-          console.log('🗑️ 削除: ' + emp.name + ' (再使用ボタンで登録)');
+          console.log('🗑️ 削除: ' + emp.name + ' [type=' + emp.type + '] (再使用ボタンで登録)');
         } else {
-          // 永続的な社員、または既存データは残す（チェックだけリセット）
+          // permanent または type未設定の場合は残す
           emp.checked = false;
           resetEmployees.push(emp);
-          console.log('✅ 残す: ' + emp.name + ' (追加ボタンで登録 or 既存データ)');
+          var typeLabel = emp.type || '未設定';
+          console.log('✅ 残す: ' + emp.name + ' [type=' + typeLabel + '] (追加ボタン or 既存データ)');
         }
       }
 
@@ -328,6 +1151,17 @@ function checkAndResetDaily() {
     // Firebaseにリセット時刻を保存
     if (typeof syncResetToFirebase === 'function') {
       syncResetToFirebase();
+    }
+
+    // 履歴記録（各工場）
+    for (var f = 0; f < factoryNames.length; f++) {
+      var resetEmployees = allEmployees[f] || [];
+      saveActivityLog('reset', '', '', {
+        factory: f,
+        factoryName: factoryNames[f],
+        totalEmployees: resetEmployees.length,
+        autoReset: true
+      });
     }
 
     // UIを更新
@@ -368,6 +1202,14 @@ function renderEmployeeList() {
     }
   }
   var uncheckedCount = employees.length - checkedCount;
+
+  // プログレスバーの更新
+  var progressPercentage = employees.length > 0 ? (checkedCount / employees.length) * 100 : 0;
+  var progressBar = document.getElementById('progressBar');
+  if (progressBar) {
+    progressBar.style.width = progressPercentage + '%';
+  }
+
   document.getElementById('listTitle').textContent = factoryNames[currentTab] + ' 消火確認リスト (' + checkedCount + '/' + employees.length + ')';
   document.getElementById('uncheckedCount').textContent = '未確認: ' + uncheckedCount + '名';
   var html = '';
@@ -375,7 +1217,16 @@ function renderEmployeeList() {
     var emp = employees[i];
     var checkedClass = emp.checked ? 'checked' : '';
     var checkedAttr = emp.checked ? 'checked' : '';
-    html = html + '<div class="employee-item ' + checkedClass + '">';
+
+    // typeに応じてクラスを追加
+    var typeClass = '';
+    if (emp.type === 'permanent') {
+      typeClass = 'type-permanent';
+    } else if (emp.type === 'temporary') {
+      typeClass = 'type-temporary';
+    }
+
+    html = html + '<div class="employee-item ' + checkedClass + ' ' + typeClass + '">';
     html = html + '<input type="checkbox" ' + checkedAttr + ' onchange="toggleCheck(' + emp.id + ')">';
     html = html + '<span class="employee-name ' + checkedClass + '">' + emp.name + '</span>';
     html = html + '<button class="btn-delete" onclick="deleteEmployee(' + emp.id + ')">削除</button></div>';
@@ -387,7 +1238,16 @@ function toggleCheck(id) {
   var employees = getEmployees();
   for (var i = 0; i < employees.length; i++) {
     if (employees[i].id === id) {
+      var wasChecked = employees[i].checked;
       employees[i].checked = !employees[i].checked;
+
+      // 履歴記録
+      saveActivityLog(
+        employees[i].checked ? 'check' : 'uncheck',
+        employees[i].name,
+        employees[i].type
+      );
+
       break;
     }
   }
@@ -396,33 +1256,48 @@ function toggleCheck(id) {
 }
 
 function addEmployee() {
-  var input = document.getElementById('employeeNameInput');
-  var name = input.value;
-  if (name && name.length > 0) {
-    name = name.trim();
-    if (name.length > 0) {
-      var employees = getEmployees();
-      var newEmp = new Object();
-      newEmp.id = Date.now();
-      newEmp.name = name;
-      newEmp.checked = false;
-      newEmp.type = 'permanent'; // 「追加」ボタンは永続的（削除しない）
-      employees.push(newEmp);
-      saveData();
-      renderEmployeeList();
-      input.value = '';
-    }
+  var numberInput = document.getElementById('employeeNumberInput');
+  var nameInput = document.getElementById('employeeNameInput');
+  var number = numberInput.value.trim();
+  var name = nameInput.value.trim();
+
+  if (number && name) {
+    var employees = getEmployees();
+    var newEmp = new Object();
+    newEmp.id = Date.now();
+    newEmp.name = number + ' ' + name;
+    newEmp.checked = false;
+    newEmp.type = 'permanent'; // 「追加」ボタンは永続的（削除しない）
+    employees.push(newEmp);
+
+    // 履歴記録
+    saveActivityLog('add', newEmp.name, newEmp.type);
+
+    saveData();
+    renderEmployeeList();
+    numberInput.value = '';
+    nameInput.value = '';
   }
 }
 
 function deleteEmployee(id) {
   var employees = getEmployees();
   var newEmployees = [];
+  var deletedEmployee = null;
+
   for (var i = 0; i < employees.length; i++) {
     if (employees[i].id !== id) {
       newEmployees.push(employees[i]);
+    } else {
+      deletedEmployee = employees[i];
     }
   }
+
+  // 履歴記録
+  if (deletedEmployee) {
+    saveActivityLog('delete', deletedEmployee.name, deletedEmployee.type);
+  }
+
   allEmployees[currentTab] = newEmployees;
   saveData();
   renderEmployeeList();
@@ -442,6 +1317,10 @@ function reuseEmployee() {
     newEmp.checked = false;
     newEmp.type = 'temporary'; // 「再使用」ボタンは一時的（AM3時に削除）
     employees.push(newEmp);
+
+    // 履歴記録
+    saveActivityLog('reuse', newEmp.name, newEmp.type);
+
     saveData();
     renderEmployeeList();
     numberInput.value = '';
@@ -457,6 +1336,17 @@ function handleFinalCheck() {
       unchecked.push(employees[i]);
     }
   }
+
+  // 履歴記録：最終確認の実行
+  var additionalInfo = {
+    totalCount: employees.length,
+    checkedCount: employees.length - unchecked.length,
+    uncheckedCount: unchecked.length,
+    success: unchecked.length === 0,
+    uncheckedNames: unchecked.map(function(e) { return e.name; })
+  };
+  saveActivityLog('final-check', '', '', additionalInfo);
+
   var modal = document.getElementById('warningModal');
   var content = document.getElementById('modalContent');
   var html = '';
@@ -489,12 +1379,21 @@ function closeModal() {
 }
 
 function setupEvents() {
-  var input = document.getElementById('employeeNameInput');
-  input.onkeypress = function(e) {
+  var numberInput = document.getElementById('employeeNumberInput');
+  var nameInput = document.getElementById('employeeNameInput');
+
+  numberInput.onkeypress = function(e) {
     if (e.key === 'Enter') {
       addEmployee();
     }
   };
+
+  nameInput.onkeypress = function(e) {
+    if (e.key === 'Enter') {
+      addEmployee();
+    }
+  };
+
   init();
 }
 
@@ -664,6 +1563,114 @@ function syncResetToFirebase() {
   } catch (e) {
     console.warn('Firebaseリセット同期エラー:', e);
   }
+}
+
+// デバッグ: 社員のTYPEを確認
+function debugEmployeeTypes() {
+  var employees = getEmployees();
+  var info = '🔍 現在の社員TYPE詳細\n\n';
+  info += '工場: ' + factoryNames[currentTab] + '\n';
+  info += '社員数: ' + employees.length + '名\n\n';
+
+  var permanentCount = 0;
+  var temporaryCount = 0;
+  var noTypeCount = 0;
+
+  for (var i = 0; i < employees.length; i++) {
+    var emp = employees[i];
+    info += '--- 社員 ' + (i + 1) + ' ---\n';
+    info += '名前: ' + emp.name + '\n';
+    info += 'ID: ' + emp.id + '\n';
+    info += 'TYPE: ' + (emp.type || 'なし') + '\n';
+    info += 'チェック: ' + (emp.checked ? 'ON' : 'OFF') + '\n\n';
+
+    if (emp.type === 'permanent') {
+      permanentCount++;
+    } else if (emp.type === 'temporary') {
+      temporaryCount++;
+    } else {
+      noTypeCount++;
+    }
+  }
+
+  info += '--- 集計 ---\n';
+  info += '📘 追加ボタン (permanent): ' + permanentCount + '名\n';
+  info += '🟡 再使用ボタン (temporary): ' + temporaryCount + '名\n';
+  info += '❓ TYPEなし: ' + noTypeCount + '名\n\n';
+
+  if (noTypeCount > 0) {
+    info += '⚠️ TYPEが設定されていない社員がいます！\n';
+    info += 'これらの社員はリセット時に削除される可能性があります。\n';
+  }
+
+  console.log(info);
+  alert(info);
+}
+
+// ============================================
+// Activity History (操作履歴記録)
+// ============================================
+function saveActivityLog(type, employeeName, employeeType, additionalInfo) {
+  var history = JSON.parse(localStorage.getItem('heater-activity-history') || '[]');
+
+  var activity = {
+    timestamp: new Date().toISOString(),
+    type: type, // 'add', 'delete', 'check', 'uncheck', 'reset'
+    factory: currentTab,
+    factoryName: factoryNames[currentTab],
+    employeeName: employeeName || '',
+    employeeType: employeeType || '',
+    additionalInfo: additionalInfo || {}
+  };
+
+  history.unshift(activity);
+
+  // 最新500件のみ保持
+  if (history.length > 500) {
+    history.length = 500;
+  }
+
+  localStorage.setItem('heater-activity-history', JSON.stringify(history));
+  console.log('📝 履歴記録:', activity);
+
+  // カスタムイベントを発火して即座に管理画面に通知
+  window.dispatchEvent(new Event('activityUpdated'));
+}
+
+// デバッグ: リセット機能をテスト（実際にはリセットしない）
+function testResetFunction() {
+  var employees = getEmployees();
+  var info = '🧪 リセット動作シミュレーション\n\n';
+  info += '工場: ' + factoryNames[currentTab] + '\n';
+  info += '現在の社員数: ' + employees.length + '名\n\n';
+
+  var willKeep = [];
+  var willDelete = [];
+
+  for (var i = 0; i < employees.length; i++) {
+    var emp = employees[i];
+    if (emp.type === 'temporary') {
+      willDelete.push(emp);
+    } else {
+      willKeep.push(emp);
+    }
+  }
+
+  info += '--- リセット後の状態（予測） ---\n\n';
+  info += '✅ 維持される社員: ' + willKeep.length + '名\n';
+  for (var i = 0; i < willKeep.length; i++) {
+    info += '  - ' + willKeep[i].name + ' [' + (willKeep[i].type || 'TYPE未設定') + ']\n';
+  }
+
+  info += '\n🗑️ 削除される社員: ' + willDelete.length + '名\n';
+  for (var i = 0; i < willDelete.length; i++) {
+    info += '  - ' + willDelete[i].name + ' [' + willDelete[i].type + ']\n';
+  }
+
+  info += '\n※ これはシミュレーションです。実際のデータは変更されていません。';
+
+  console.log(info);
+  alert(info);
 }
 </script>
 </body>
