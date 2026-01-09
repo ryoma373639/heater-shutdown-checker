@@ -1,9 +1,49 @@
-<!DOCTYPE html>
+const QRCode = require('qrcode');
+const fs = require('fs');
+
+// GitHub Pages の固定URL
+const BASE_URL = 'https://ryoma373639.github.io/heater-shutdown-checker';
+
+const urls = {
+  main: `${BASE_URL}/index.html`,
+  admin: `${BASE_URL}/admin.html`
+};
+
+async function generateQRCodes() {
+  try {
+    console.log('🎨 本番環境用QRコード生成中...\n');
+
+    // メインアプリのQRコード
+    await QRCode.toFile('qr-main-production.png', urls.main, {
+      width: 500,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+    console.log('✅ メインアプリQRコード生成完了: qr-main-production.png');
+    console.log(`   URL: ${urls.main}\n`);
+
+    // 管理画面のQRコード
+    await QRCode.toFile('qr-admin-production.png', urls.admin, {
+      width: 500,
+      margin: 2,
+      color: {
+        dark: '#DC2626',
+        light: '#FFFFFF'
+      }
+    });
+    console.log('✅ 管理画面QRコード生成完了: qr-admin-production.png');
+    console.log(`   URL: ${urls.admin}\n`);
+
+    // HTMLページも生成（両方のQRコードを表示）
+    const html = `<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>灯油ストーブ消火確認システム - QRコード</title>
+  <title>灯油ストーブ消火確認システム - QRコード（本番環境）</title>
   <style>
     * {
       margin: 0;
@@ -32,6 +72,17 @@
       margin-bottom: 40px;
       font-size: 32px;
       text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .badge {
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: 20px;
     }
 
     .qr-grid {
@@ -109,7 +160,7 @@
       font-size: 20px;
     }
 
-    .instructions ol {
+    .instructions ul {
       padding-left: 25px;
       color: #4b5563;
       line-height: 1.8;
@@ -134,30 +185,46 @@
 <body>
   <div class="container">
     <h1>🔥 灯油ストーブ消火確認システム</h1>
+    <div style="text-align: center;">
+      <span class="badge">✨ 本番環境 - どこからでもアクセス可能</span>
+    </div>
 
     <div class="qr-grid">
       <div class="qr-card main">
         <div class="qr-title">📱 メインアプリ</div>
-        <img src="qr-main.png" alt="メインアプリQRコード" class="qr-image">
-        <div class="qr-url">http://192.168.26.104:8010/index.html</div>
+        <img src="qr-main-production.png" alt="メインアプリQRコード" class="qr-image">
+        <div class="qr-url">${urls.main}</div>
       </div>
 
       <div class="qr-card admin">
         <div class="qr-title">⚙️ 管理画面</div>
-        <img src="qr-admin.png" alt="管理画面QRコード" class="qr-image">
-        <div class="qr-url">http://192.168.26.104:8010/admin.html</div>
+        <img src="qr-admin-production.png" alt="管理画面QRコード" class="qr-image">
+        <div class="qr-url">${urls.admin}</div>
       </div>
     </div>
 
     <div class="instructions">
       <h2>📖 使用方法</h2>
-      <ol>
-        <li><strong>メインアプリ</strong>: スマートフォンでQRコードをスキャンして社員の出退勤を記録</li>
-        <li><strong>管理画面</strong>: タブレットやPCでQRコードをスキャンして全工場の状況を管理</li>
-        <li>同じWi-Fiネットワーク上のデバイスからアクセス可能です</li>
-        <li>このページを印刷して掲示することもできます</li>
-      </ol>
+      <ul>
+        <li><strong>どこからでもアクセス可能：</strong> インターネット接続があれば、どのWi-Fiでもアクセスできます</li>
+        <li><strong>QRコード固定：</strong> Wi-Fiが変わってもQRコードは変更不要です</li>
+        <li><strong>スマートフォン：</strong> QRコードをスキャンしてアプリにアクセス</li>
+        <li><strong>初回アクセス後：</strong> ホーム画面に追加してオフラインでも使用可能（PWA機能）</li>
+      </ul>
     </div>
   </div>
 </body>
-</html>
+</html>`;
+
+    fs.writeFileSync('qr-codes-production.html', html);
+    console.log('✅ 本番QRコード表示ページ生成完了: qr-codes-production.html\n');
+
+    console.log('📱 ブラウザで qr-codes-production.html を開いてQRコードを確認してください');
+    console.log('🌐 デプロイ後、このQRコードは常に有効です\n');
+
+  } catch (error) {
+    console.error('❌ エラー:', error);
+  }
+}
+
+generateQRCodes();

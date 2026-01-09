@@ -1,7 +1,7 @@
 const QRCode = require('qrcode');
 const fs = require('fs');
 
-const IP = '192.168.10.119';
+const IP = '192.168.26.104';
 const PORT = '8010';
 
 const urls = {

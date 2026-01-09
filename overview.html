@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>灯油ストーブ消火確認システム - 概要書</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: #f8fafc;
+      color: #1f2937;
+      line-height: 1.8;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      padding: 50px 40px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .header .subtitle {
+      font-size: 18px;
+      opacity: 0.95;
+    }
+
+    .header .version {
+      margin-top: 15px;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    .content {
+      padding: 50px 40px;
+    }
+
+    .section {
+      margin-bottom: 50px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 3px solid #3b82f6;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .icon {
+      font-size: 28px;
+    }
+
+    .section-content {
+      font-size: 16px;
+      color: #4b5563;
+    }
+
+    .section-content p {
+      margin-bottom: 15px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 25px;
+    }
+
+    .feature-card {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 25px;
+      border-left: 4px solid #3b82f6;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+    }
+
+    .feature-card h3 {
+      font-size: 18px;
+      color: #1f2937;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card h3 .icon {
+      font-size: 24px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.7;
+    }
+
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .info-box.warning {
+      background: #fef3c7;
+      border-left-color: #f59e0b;
+    }
+
+    .info-box.success {
+      background: #d1fae5;
+      border-left-color: #10b981;
+    }
+
+    .info-box h4 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-box ul {
+      padding-left: 25px;
+      margin-top: 10px;
+    }
+
+    .info-box li {
+      margin-bottom: 8px;
+      color: #4b5563;
+    }
+
+    .tech-specs {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 20px;
+    }
+
+    .tech-specs table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .tech-specs th,
+    .tech-specs td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .tech-specs th {
+      background: #3b82f6;
+      color: white;
+      font-weight: 600;
+    }
+
+    .tech-specs tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tech-specs td:first-child {
+      font-weight: 600;
+      color: #374151;
+      width: 200px;
+    }
+
+    .qr-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin-top: 25px;
+    }
+
+    .qr-box {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      border: 2px solid #e5e7eb;
+    }
+
+    .qr-box h4 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #1f2937;
+    }
+
+    .qr-box .url {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #6b7280;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      word-break: break-all;
+    }
+
+    .footer {
+      background: #f9fafb;
+      padding: 30px 40px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .footer a {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .container {
+        box-shadow: none;
+        border-radius: 0;
+      }
+
+      .feature-card:hover {
+        transform: none;
+        box-shadow: none;
+      }
+
+      @page {
+        margin: 2cm;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .content {
+        padding: 30px 20px;
+      }
+
+      .header {
+        padding: 30px 20px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .section-title {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔥 灯油ストーブ消火確認システム</h1>
+      <div class="subtitle">Heater Shutdown Checker</div>
+      <div class="version">Version 2.0 | 2026年1月</div>
+    </div>
+
+    <div class="content">
+      <!-- 概要 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">📋</span>
+          概要
+        </h2>
+        <div class="section-content">
+          <p>
+            灯油ストーブ消火確認システムは、工場内の社員が退勤時に灯油ストーブの消火を確実に確認するための管理システムです。
+            複数工場（第一工場～第四工場）の社員を一元管理し、リアルタイムで確認状況を把握できます。
+          </p>
+          <p>
+            スマートフォン・タブレット対応のPWA（Progressive Web App）として構築されており、オフラインでも動作し、
+            インストール不要でブラウザから直接アクセス可能です。
+          </p>
+        </div>
+
+        <div class="info-box success">
+          <h4>✅ 主な目的</h4>
+          <ul>
+            <li>退勤時の灯油ストーブ消火忘れを防止</li>
+            <li>社員の出退勤状況をリアルタイムで管理</li>
+            <li>工場別の確認状況を一元的に把握</li>
+            <li>確認履歴を記録し、トラブル時の追跡を可能に</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 主な機能 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">⚙️</span>
+          主な機能
+        </h2>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3><span class="icon">👥</span>社員管理</h3>
+            <p>社員番号と名前で登録。「追加」（permanent）と「再使用」（temporary）の2種類の登録方法をサポート。追加社員はリセット時も保持されます。</p>
+          </div>
+
+          <div class="feature-card">
+            <h3><span class="icon">✓</span>チェック機能</h3>
+            <p>退勤時にボタンをタップしてストーブ消火を確認。チェック済み社員は緑色で表示され、未確認社員は一目で把握できます。</p>
+          </div>
+
+          <div class="feature-card">
+            <h3><span class="icon">🔄</span>リセット機能</h3>
+            <p>日次で「追加」社員のチェックのみリセット。「再使用」社員は完全削除。最終確認後に手動または自動でリセット可能です。</p>
+          </div>
+
+          <div class="feature-card">
+            <h3><span class="icon">🏭</span>工場別管理</h3>
+            <p>第一工場～第四工場まで、工場ごとに独立した社員リストを管理。タブ切り替えで各工場の状況を確認できます。</p>
+          </div>
+
+          <div class="feature-card">
+            <h3><span class="icon">📊</span>統計ダッシュボード</h3>
+            <p>管理画面で全工場の登録社員数、削除数、再使用数を一覧表示。リアルタイムで更新され、工場別の詳細データも確認可能です。</p>
+          </div>
+
+          <div class="feature-card">
+            <h3><span class="icon">📜</span>アクティビティタイムライン</h3>
+            <p>すべての操作履歴をX（旧Twitter）風のタイムラインで表示。社員の追加、削除、チェック、リセット等の操作を時系列で確認できます。</p>
+          </div>
+
+          <div class="feature-card">
+            <h3><span class="icon">⚠️</span>警告モーダル</h3>
+            <p>リセットやデータ削除の実行前に、影響範囲の詳細統計を表示した警告画面を表示。誤操作を防止します。</p>
+          </div>
+
+          <div class="feature-card">
+            <h3><span class="icon">📱</span>QRコードアクセス</h3>
+            <p>メインアプリと管理画面それぞれのQRコードを生成。スマートフォンで簡単にアクセス可能です。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- システム構成 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">🏗️</span>
+          システム構成
+        </h2>
+        <div class="section-content">
+          <p>本システムは以下の2つの画面で構成されています：</p>
+
+          <div class="feature-grid" style="margin-top: 20px;">
+            <div class="feature-card" style="border-left-color: #3b82f6;">
+              <h3><span class="icon">📱</span>メインアプリ（index.html）</h3>
+              <p><strong>対象：</strong> 全社員</p>
+              <p><strong>機能：</strong></p>
+              <ul style="margin-top: 10px; padding-left: 20px; font-size: 14px;">
+                <li>社員番号・名前の登録</li>
+                <li>ストーブ消火確認チェック</li>
+                <li>自身の登録情報削除</li>
+                <li>最終確認の実行</li>
+              </ul>
+            </div>
+
+            <div class="feature-card" style="border-left-color: #dc2626;">
+              <h3><span class="icon">⚙️</span>管理画面（admin.html）</h3>
+              <p><strong>対象：</strong> 管理者のみ</p>
+              <p><strong>機能：</strong></p>
+              <ul style="margin-top: 10px; padding-left: 20px; font-size: 14px;">
+                <li>全工場の統計ダッシュボード</li>
+                <li>工場別リセット機能</li>
+                <li>全データ管理機能</li>
+                <li>アクティビティタイムライン</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 使用方法 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">📖</span>
+          使用方法
+        </h2>
+        <div class="section-content">
+          <div class="info-box">
+            <h4>🔷 メインアプリの使い方（社員向け）</h4>
+            <ul>
+              <li><strong>初回登録：</strong> 社員番号と名前を入力して「追加」ボタンをクリック</li>
+              <li><strong>出勤時：</strong> 自分の名前のチェックボックスをONにする</li>
+              <li><strong>退勤時：</strong> 灯油ストーブを消火後、チェックボックスをOFFにする</li>
+              <li><strong>再使用：</strong> 臨時社員や一時的な登録は「再使用」から登録</li>
+              <li><strong>最終確認：</strong> 全員退勤後、最終確認ボタンで未確認者を確認</li>
+            </ul>
+          </div>
+
+          <div class="info-box warning">
+            <h4>🔶 管理画面の使い方（管理者向け）</h4>
+            <ul>
+              <li><strong>ダッシュボード：</strong> 各工場の登録社員数、削除数、再使用数を確認</li>
+              <li><strong>工場選択リセット：</strong> 特定の工場のみチェックをリセット</li>
+              <li><strong>全工場リセット：</strong> 全工場のチェックを一括リセット</li>
+              <li><strong>完全削除：</strong> すべてのデータを削除（要注意）</li>
+              <li><strong>タイムライン：</strong> 全操作履歴を時系列で確認</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- アクセス方法 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">🔗</span>
+          アクセス方法
+        </h2>
+        <div class="section-content">
+          <p>以下のQRコードをスキャンするか、URLに直接アクセスしてください：</p>
+
+          <div class="qr-section">
+            <div class="qr-box">
+              <h4>📱 メインアプリ</h4>
+              <div class="url">http://192.168.10.119:8010/index.html</div>
+              <p style="margin-top: 15px; font-size: 14px; color: #6b7280;">qr-main.html を参照</p>
+            </div>
+
+            <div class="qr-box">
+              <h4>⚙️ 管理画面</h4>
+              <div class="url">http://192.168.10.119:8010/admin.html</div>
+              <p style="margin-top: 15px; font-size: 14px; color: #6b7280;">qr-admin.html を参照</p>
+            </div>
+          </div>
+
+          <div class="info-box" style="margin-top: 25px;">
+            <h4>ℹ️ ネットワーク要件</h4>
+            <ul>
+              <li>同じWi-Fiネットワーク（192.168.10.x）に接続している必要があります</li>
+              <li>インターネット接続は不要（ローカルネットワークのみ）</li>
+              <li>初回アクセス後はオフラインでも動作します（PWA機能）</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 技術仕様 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">💻</span>
+          技術仕様
+        </h2>
+        <div class="tech-specs">
+          <table>
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>仕様</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>アプリケーション形式</td>
+                <td>PWA（Progressive Web App）</td>
+              </tr>
+              <tr>
+                <td>対応デバイス</td>
+                <td>スマートフォン、タブレット、PC（レスポンシブデザイン）</td>
+              </tr>
+              <tr>
+                <td>対応ブラウザ</td>
+                <td>Chrome、Safari、Edge、Firefox（最新版推奨）</td>
+              </tr>
+              <tr>
+                <td>データ保存</td>
+                <td>localStorage（ブラウザ内蔵ストレージ）</td>
+              </tr>
+              <tr>
+                <td>オフライン動作</td>
+                <td>対応（Service Worker使用）</td>
+              </tr>
+              <tr>
+                <td>リアルタイム更新</td>
+                <td>0.5秒間隔ポーリング + Storage Event</td>
+              </tr>
+              <tr>
+                <td>デザインシステム</td>
+                <td>Glassmorphism（ガラスモーフィズム）</td>
+              </tr>
+              <tr>
+                <td>アニメーション</td>
+                <td>CSS3 Animations & Transitions</td>
+              </tr>
+              <tr>
+                <td>履歴保存上限</td>
+                <td>500件（古い履歴は自動削除）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- データ管理 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">💾</span>
+          データ管理
+        </h2>
+        <div class="section-content">
+          <p>システム内で管理される主なデータは以下の通りです：</p>
+
+          <div class="info-box">
+            <h4>📦 保存データ種別</h4>
+            <ul>
+              <li><strong>社員データ：</strong> 各工場の社員リスト（番号、名前、タイプ、チェック状態）</li>
+              <li><strong>アクティビティ履歴：</strong> 全操作履歴（最大500件）</li>
+              <li><strong>リセット設定：</strong> 自動リセット時刻の設定</li>
+            </ul>
+          </div>
+
+          <div class="info-box warning">
+            <h4>⚠️ データのバックアップ</h4>
+            <ul>
+              <li>localStorageに保存されたデータはブラウザのキャッシュクリアで削除されます</li>
+              <li>重要なデータは定期的にエクスポートすることを推奨します</li>
+              <li>ブラウザを変更すると別のデータ領域として扱われます</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 運用上の注意事項 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">⚠️</span>
+          運用上の注意事項
+        </h2>
+        <div class="section-content">
+          <div class="info-box warning">
+            <h4>🔸 重要な注意事項</h4>
+            <ul>
+              <li><strong>管理画面アクセス：</strong> 管理画面は管理者のみが使用してください。誤操作で全データが削除される可能性があります</li>
+              <li><strong>リセット操作：</strong> リセット前に必ず警告モーダルの内容を確認してください</li>
+              <li><strong>追加 vs 再使用：</strong> 常勤社員は「追加」、臨時社員は「再使用」で登録することを推奨します</li>
+              <li><strong>最終確認：</strong> 1日の最後に必ず最終確認を実行し、未確認者がいないか確認してください</li>
+              <li><strong>ネットワーク：</strong> 同じWi-Fiネットワークに接続していないとアクセスできません</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- サポート情報 -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="icon">📞</span>
+          サポート情報
+        </h2>
+        <div class="section-content">
+          <div class="tech-specs">
+            <table>
+              <tbody>
+              <tr>
+                <td>GitHubリポジトリ</td>
+                <td><a href="https://github.com/ryoma373639/heater-shutdown-checker" target="_blank">https://github.com/ryoma373639/heater-shutdown-checker</a></td>
+              </tr>
+              <tr>
+                <td>バージョン</td>
+                <td>2.0</td>
+              </tr>
+              <tr>
+                <td>最終更新日</td>
+                <td>2026年1月9日</td>
+              </tr>
+              <tr>
+                <td>開発フレームワーク</td>
+                <td>Miyabi Framework（自律型開発環境）</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">
+      <p>🤖 Generated with <a href="https://claude.com/claude-code" target="_blank">Claude Code</a></p>
+      <p style="margin-top: 10px;">© 2026 灯油ストーブ消火確認システム - All Rights Reserved</p>
+    </div>
+  </div>
+</body>
+</html>
