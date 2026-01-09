@@ -1,8 +1,11 @@
 // Service Worker for Heater Shutdown Checker PWA
-const CACHE_NAME = 'heater-checker-v1.0.1';
+const CACHE_NAME = 'heater-checker-v2.0.0';
 const urlsToCache = [
   './',
   './index.html',
+  './admin.html',
+  './auth.js',
+  './firebase-config.js',
   './manifest.json',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png'
@@ -44,38 +47,35 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network First strategy (always try to get latest version)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - return response from cache
-        if (response) {
-          console.log('[Service Worker] Serving from cache:', event.request.url);
+        // Check if valid response
+        if (!response || response.status !== 200) {
           return response;
         }
 
-        // Clone the request
-        const fetchRequest = event.request.clone();
+        // Clone the response
+        const responseToCache = response.clone();
 
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+        // Update cache with latest version
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+
+        console.log('[Service Worker] Serving from network:', event.request.url);
+        return response;
+      })
+      .catch((error) => {
+        console.log('[Service Worker] Network failed, serving from cache:', event.request.url);
+        // Network failed, fallback to cache
+        return caches.match(event.request).then((response) => {
+          if (response) {
             return response;
           }
-
-          // Clone the response
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        }).catch((error) => {
-          console.log('[Service Worker] Fetch failed:', error);
-          // Return offline page if available
+          // If not in cache, return offline page
           return caches.match('./index.html');
         });
       })
