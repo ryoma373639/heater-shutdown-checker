@@ -797,6 +797,46 @@
           現在の設定: AM 5:00
         </p>
       </div>
+
+      <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 30px 0;">
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: var(--gray-700); font-weight: 600; margin-bottom: 8px;">
+          🔐 パスワード変更
+        </label>
+        <p style="color: var(--gray-600); font-size: 13px; margin-bottom: 12px;">
+          アプリのログインパスワードを変更できます
+        </p>
+
+        <div style="max-width: 400px;">
+          <input
+            type="password"
+            id="currentPassword"
+            placeholder="現在のパスワード"
+            style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 14px; margin-bottom: 10px;"
+          >
+          <input
+            type="password"
+            id="newPassword"
+            placeholder="新しいパスワード（4文字以上）"
+            style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 14px; margin-bottom: 10px;"
+          >
+          <input
+            type="password"
+            id="confirmPassword"
+            placeholder="新しいパスワード（確認）"
+            style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 14px; margin-bottom: 12px;"
+          >
+
+          <button class="btn btn-primary" onclick="changeAppPassword()">
+            🔒 パスワードを変更
+          </button>
+
+          <p id="passwordChangeStatus" style="color: var(--gray-600); font-size: 12px; margin-top: 8px;">
+            デフォルトパスワード: hmt1541
+          </p>
+        </div>
+      </div>
     </div>
 
     <!-- Factory Reset Section -->
@@ -1408,6 +1448,110 @@
     }
 
     // ============================================
+    // Password Change Functions
+    // ============================================
+
+    async function changeAppPassword() {
+      const currentPasswordInput = document.getElementById('currentPassword');
+      const newPasswordInput = document.getElementById('newPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+      const statusElement = document.getElementById('passwordChangeStatus');
+
+      const currentPassword = currentPasswordInput.value.trim();
+      const newPassword = newPasswordInput.value.trim();
+      const confirmPassword = confirmPasswordInput.value.trim();
+
+      // バリデーション
+      if (!currentPassword) {
+        statusElement.style.color = 'var(--primary-red)';
+        statusElement.textContent = '❌ 現在のパスワードを入力してください';
+        return;
+      }
+
+      if (!newPassword) {
+        statusElement.style.color = 'var(--primary-red)';
+        statusElement.textContent = '❌ 新しいパスワードを入力してください';
+        return;
+      }
+
+      if (newPassword.length < 4) {
+        statusElement.style.color = 'var(--primary-red)';
+        statusElement.textContent = '❌ 新しいパスワードは4文字以上で設定してください';
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        statusElement.style.color = 'var(--primary-red)';
+        statusElement.textContent = '❌ 新しいパスワードが一致しません';
+        return;
+      }
+
+      // パスワード変更を実行
+      statusElement.style.color = 'var(--gray-600)';
+      statusElement.textContent = '🔄 変更中...';
+
+      try {
+        const result = await window.heaterAuth.changePassword(currentPassword, newPassword);
+
+        if (result.success) {
+          // Firebaseにも保存
+          const newHash = await window.heaterAuth.hashPassword(newPassword);
+          if (db) {
+            await db.ref('settings/customPasswordHash').set(newHash);
+          }
+
+          statusElement.style.color = 'var(--primary-green)';
+          statusElement.textContent = '✅ パスワードを変更しました';
+          log('パスワードを変更しました', 'success');
+
+          // フィールドをクリア
+          currentPasswordInput.value = '';
+          newPasswordInput.value = '';
+          confirmPasswordInput.value = '';
+
+          setTimeout(() => {
+            statusElement.style.color = 'var(--gray-600)';
+            statusElement.textContent = 'カスタムパスワード設定済み';
+          }, 5000);
+        } else {
+          statusElement.style.color = 'var(--primary-red)';
+          statusElement.textContent = '❌ ' + result.error;
+          log('パスワード変更失敗: ' + result.error, 'error');
+        }
+      } catch (error) {
+        statusElement.style.color = 'var(--primary-red)';
+        statusElement.textContent = '❌ エラーが発生しました';
+        log('パスワード変更エラー: ' + error, 'error');
+      }
+    }
+
+    function loadPasswordStatus() {
+      const statusElement = document.getElementById('passwordChangeStatus');
+      const customPasswordHash = localStorage.getItem('heater-custom-password-hash');
+
+      if (customPasswordHash) {
+        statusElement.textContent = 'カスタムパスワード設定済み';
+      } else {
+        statusElement.textContent = 'デフォルトパスワード: hmt1541';
+      }
+
+      // Firebaseからパスワードハッシュを同期
+      if (db) {
+        db.ref('settings/customPasswordHash').on('value', function(snapshot) {
+          const firebasePasswordHash = snapshot.val();
+          if (firebasePasswordHash) {
+            const currentHash = localStorage.getItem('heater-custom-password-hash');
+            if (currentHash !== firebasePasswordHash) {
+              localStorage.setItem('heater-custom-password-hash', firebasePasswordHash);
+              statusElement.textContent = 'カスタムパスワード設定済み';
+              log('パスワード設定を同期しました', 'info');
+            }
+          }
+        });
+      }
+    }
+
+    // ============================================
     // Activity Timeline
     // ============================================
     let currentFilter = 'all';
@@ -1638,6 +1782,9 @@
 
       // リセット時刻設定をロード
       loadResetTime();
+
+      // パスワード状態をロード
+      loadPasswordStatus();
 
       // リアルタイム更新を開始
       startRealtimeUpdates();

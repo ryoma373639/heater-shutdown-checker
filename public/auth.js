@@ -43,7 +43,10 @@
   // 認証を実行
   async function authenticate(password) {
     const hash = await hashPassword(password);
-    const correctHash = await hashPassword('hmt1541');
+
+    // カスタムパスワードがあればそれを使用、なければデフォルト
+    const customPasswordHash = localStorage.getItem('heater-custom-password-hash');
+    const correctHash = customPasswordHash || await hashPassword('hmt1541');
 
     if (hash === correctHash) {
       localStorage.setItem('heater-auth-token', 'authenticated');
@@ -51,6 +54,31 @@
       return true;
     }
     return false;
+  }
+
+  // パスワードを変更
+  async function changePassword(currentPassword, newPassword) {
+    // 現在のパスワードで認証
+    const isValid = await authenticate(currentPassword);
+
+    if (!isValid) {
+      return { success: false, error: '現在のパスワードが正しくありません' };
+    }
+
+    // 新しいパスワードが短すぎる場合
+    if (newPassword.length < 4) {
+      return { success: false, error: '新しいパスワードは4文字以上で設定してください' };
+    }
+
+    // 新しいパスワードをハッシュ化して保存
+    const newHash = await hashPassword(newPassword);
+    localStorage.setItem('heater-custom-password-hash', newHash);
+
+    // 認証トークンを更新
+    localStorage.setItem('heater-auth-token', 'authenticated');
+    localStorage.setItem('heater-auth-time', new Date().getTime().toString());
+
+    return { success: true };
   }
 
   // 認証画面を表示
@@ -269,6 +297,8 @@
   // グローバルに公開（デバッグ用）
   window.heaterAuth = {
     isAuthenticated,
+    changePassword,
+    hashPassword,
     logout: function() {
       localStorage.removeItem('heater-auth-token');
       localStorage.removeItem('heater-auth-time');
