@@ -752,6 +752,53 @@
     <!-- Statistics Dashboard -->
     <div class="dashboard-grid" id="dashboardGrid"></div>
 
+    <!-- Settings Section -->
+    <div class="card">
+      <h2 class="card-title">⚙️ システム設定</h2>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: var(--gray-700); font-weight: 600; margin-bottom: 8px;">
+          🕐 自動リセット時刻
+        </label>
+        <p style="color: var(--gray-600); font-size: 13px; margin-bottom: 12px;">
+          毎日この時刻以降に自動リセットが実行されます
+        </p>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <select id="resetHourSelect" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 14px;">
+            <option value="0">AM 0:00</option>
+            <option value="1">AM 1:00</option>
+            <option value="2">AM 2:00</option>
+            <option value="3">AM 3:00</option>
+            <option value="4">AM 4:00</option>
+            <option value="5" selected>AM 5:00</option>
+            <option value="6">AM 6:00</option>
+            <option value="7">AM 7:00</option>
+            <option value="8">AM 8:00</option>
+            <option value="9">AM 9:00</option>
+            <option value="10">AM 10:00</option>
+            <option value="11">AM 11:00</option>
+            <option value="12">PM 12:00</option>
+            <option value="13">PM 1:00</option>
+            <option value="14">PM 2:00</option>
+            <option value="15">PM 3:00</option>
+            <option value="16">PM 4:00</option>
+            <option value="17">PM 5:00</option>
+            <option value="18">PM 6:00</option>
+            <option value="19">PM 7:00</option>
+            <option value="20">PM 8:00</option>
+            <option value="21">PM 9:00</option>
+            <option value="22">PM 10:00</option>
+            <option value="23">PM 11:00</option>
+          </select>
+          <button class="btn btn-primary" onclick="saveResetTime()">
+            💾 保存
+          </button>
+        </div>
+        <p id="resetTimeStatus" style="color: var(--gray-600); font-size: 12px; margin-top: 8px;">
+          現在の設定: AM 5:00
+        </p>
+      </div>
+    </div>
+
     <!-- Factory Reset Section -->
     <div class="card">
       <h2 class="card-title">🏭 工場別リセット</h2>
@@ -1281,6 +1328,86 @@
     }
 
     // ============================================
+    // Settings Functions
+    // ============================================
+
+    function saveResetTime() {
+      const select = document.getElementById('resetHourSelect');
+      const resetHour = parseInt(select.value);
+
+      // Save to localStorage and Firebase
+      localStorage.setItem('heater-reset-hour', resetHour);
+
+      if (db) {
+        db.ref('settings/resetHour').set(resetHour);
+      }
+
+      // Update status display
+      updateResetTimeDisplay(resetHour);
+
+      log(`自動リセット時刻を ${getTimeLabel(resetHour)} に設定しました`, 'success');
+
+      // Show success message
+      const status = document.getElementById('resetTimeStatus');
+      status.style.color = 'var(--primary-green)';
+      status.textContent = `✅ 保存しました: ${getTimeLabel(resetHour)}`;
+
+      setTimeout(() => {
+        status.style.color = 'var(--gray-600)';
+        status.textContent = `現在の設定: ${getTimeLabel(resetHour)}`;
+      }, 3000);
+    }
+
+    function loadResetTime() {
+      let resetHour = localStorage.getItem('heater-reset-hour');
+
+      if (resetHour === null) {
+        resetHour = 5; // Default to 5:00 AM
+        localStorage.setItem('heater-reset-hour', resetHour);
+      } else {
+        resetHour = parseInt(resetHour);
+      }
+
+      // Set select value
+      const select = document.getElementById('resetHourSelect');
+      if (select) {
+        select.value = resetHour;
+      }
+
+      // Update display
+      updateResetTimeDisplay(resetHour);
+
+      // Sync with Firebase
+      if (db) {
+        db.ref('settings/resetHour').on('value', function(snapshot) {
+          const firebaseResetHour = snapshot.val();
+          if (firebaseResetHour !== null && firebaseResetHour !== resetHour) {
+            localStorage.setItem('heater-reset-hour', firebaseResetHour);
+            if (select) {
+              select.value = firebaseResetHour;
+            }
+            updateResetTimeDisplay(firebaseResetHour);
+            log(`自動リセット時刻を同期: ${getTimeLabel(firebaseResetHour)}`, 'info');
+          }
+        });
+      }
+    }
+
+    function updateResetTimeDisplay(hour) {
+      const status = document.getElementById('resetTimeStatus');
+      if (status) {
+        status.textContent = `現在の設定: ${getTimeLabel(hour)}`;
+      }
+    }
+
+    function getTimeLabel(hour) {
+      if (hour === 0) return 'AM 0:00 (深夜)';
+      if (hour < 12) return `AM ${hour}:00`;
+      if (hour === 12) return 'PM 12:00 (正午)';
+      return `PM ${hour - 12}:00`;
+    }
+
+    // ============================================
     // Activity Timeline
     // ============================================
     let currentFilter = 'all';
@@ -1508,6 +1635,9 @@
 
       // ダッシュボード初期化
       await refreshDashboard();
+
+      // リセット時刻設定をロード
+      loadResetTime();
 
       // リアルタイム更新を開始
       startRealtimeUpdates();

@@ -877,7 +877,7 @@
         <div style="flex: 1;"><h1>灯油ストーブ消火確認</h1><p class="subtitle">火器安全管理システム</p></div>
       </div>
       <div class="info-box">
-        <p style="color: #1e40af;"><strong>毎日AM3時に自動リセット</strong> されます。退社時に必ずチェックしてください。</p>
+        <p style="color: #1e40af;" id="resetTimeText"><strong>毎日AM5時に自動リセット</strong> されます。退社時に必ずチェックしてください。</p>
         <p style="color: #6b7280; font-size: 12px; margin-top: 8px;" id="resetInfo">最終リセット: 未実行</p>
         <p style="font-size: 11px; margin-top: 8px;" id="firebaseStatus">
           <span style="color: #f59e0b;">🔄 接続確認中...</span>
@@ -954,6 +954,7 @@ function init() {
   checkAndResetDaily();
   renderEmployeeList();
   updateResetInfo();
+  updateResetTimeText();
 
   // Firebase同期リスナーをセットアップ
   if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
@@ -983,6 +984,22 @@ function updateResetInfo() {
       infoElement.textContent = '最終リセット: 未実行';
     }
   }
+}
+
+function updateResetTimeText() {
+  var resetHour = parseInt(localStorage.getItem('heater-reset-hour') || '5');
+  var textElement = document.getElementById('resetTimeText');
+  if (textElement) {
+    var timeLabel = getResetTimeLabel(resetHour);
+    textElement.innerHTML = '<strong>毎日' + timeLabel + 'に自動リセット</strong> されます。退社時に必ずチェックしてください。';
+  }
+}
+
+function getResetTimeLabel(hour) {
+  if (hour === 0) return 'AM0時（深夜）';
+  if (hour < 12) return 'AM' + hour + '時';
+  if (hour === 12) return 'PM12時（正午）';
+  return 'PM' + (hour - 12) + '時';
 }
 
 function loadData() {
@@ -1099,11 +1116,14 @@ function checkAndResetDaily() {
   var today = now.toDateString();
   var currentHour = now.getHours();
 
-  console.log('⏰ リセットチェック - 現在時刻:', currentHour + '時', '最終リセット:', lastReset, '今日:', today);
+  // リセット時刻を取得（デフォルト: 5:00 AM）
+  var resetHour = parseInt(localStorage.getItem('heater-reset-hour') || '5');
 
-  // AM3時以降で、かつ前回のリセットが今日でない場合にリセット
-  if (currentHour >= 3 && lastReset !== today) {
-    console.log('🔄 AM3時リセット実行中...');
+  console.log('⏰ リセットチェック - 現在時刻:', currentHour + '時', 'リセット設定:', resetHour + '時', '最終リセット:', lastReset, '今日:', today);
+
+  // 設定時刻以降で、かつ前回のリセットが今日でない場合にリセット
+  if (currentHour >= resetHour && lastReset !== today) {
+    console.log('🔄 自動リセット実行中... (設定時刻: ' + resetHour + '時)');
     console.log('📝 チェック状態と「再使用」で追加された社員をクリアします');
 
     // 全工場をリセット
@@ -1172,7 +1192,7 @@ function checkAndResetDaily() {
 
     console.log('✅ リセット完了 - 再使用の社員を削除、追加の社員は維持しました');
   } else {
-    console.log('ℹ️ リセット不要（条件: AM3時以降 かつ 今日未実行）');
+    console.log('ℹ️ リセット不要（条件: ' + resetHour + '時以降 かつ 今日未実行）');
   }
 
   setTimeout(checkAndResetDaily, 60000);
@@ -1544,6 +1564,19 @@ function setupFirebaseListeners() {
         if (currentLocalReset !== lastReset) {
           localStorage.setItem('heater-last-reset', lastReset);
           console.log('🔄 リセット時刻を同期:', lastReset);
+        }
+      }
+    });
+
+    // 自動リセット時刻設定の同期
+    db.ref('settings/resetHour').on('value', function(snapshot) {
+      var resetHour = snapshot.val();
+      if (resetHour !== null && resetHour !== undefined) {
+        var currentResetHour = localStorage.getItem('heater-reset-hour');
+        if (currentResetHour !== String(resetHour)) {
+          localStorage.setItem('heater-reset-hour', resetHour);
+          updateResetTimeText();
+          console.log('🔄 自動リセット時刻設定を同期:', resetHour + '時');
         }
       }
     });
