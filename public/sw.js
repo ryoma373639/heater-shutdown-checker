@@ -1,5 +1,5 @@
 // Service Worker for Heater Shutdown Checker PWA
-const CACHE_NAME = 'heater-checker-v2.0.1';
+const CACHE_NAME = 'heater-checker-v2.1.0';
 const urlsToCache = [
   './',
   './index.html',

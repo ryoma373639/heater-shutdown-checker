@@ -1644,6 +1644,50 @@
 
       log('システム準備完了', 'success');
     });
+
+    // Service Worker Registration with Auto-Update
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(function(registration) {
+          console.log('✅ Service Worker registered:', registration.scope);
+
+          // 更新をチェック
+          registration.update();
+
+          // 新しいService Workerが待機中の場合、自動的にアクティブ化してリロード
+          if (registration.waiting) {
+            console.log('🔄 新しいバージョンを適用中...');
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+
+          // 新しいService Workerがインストールされたら通知
+          registration.addEventListener('updatefound', function() {
+            var newWorker = registration.installing;
+            console.log('📥 新しいバージョンをダウンロード中...');
+
+            newWorker.addEventListener('statechange', function() {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // 新しいバージョンがインストールされた
+                console.log('✨ 新しいバージョンが利用可能です。リロードします...');
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+        })
+        .catch(function(error) {
+          console.log('❌ Service Worker登録失敗:', error);
+        });
+
+      // Service Workerが更新されてアクティブになったらページをリロード
+      var refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!refreshing) {
+          refreshing = true;
+          console.log('🔄 ページを更新して最新版を表示します...');
+          window.location.reload();
+        }
+      });
+    }
   </script>
 </body>
 </html>
