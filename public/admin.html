@@ -999,12 +999,49 @@
     // ============================================
     // Data Loading
     // ============================================
+    // マイグレーション: typeプロパティがない既存データにpermanentを設定
+    function migrateEmployeeTypes(factoryIndex) {
+      const employees = allData[factoryIndex];
+      if (!Array.isArray(employees)) return;
+
+      let needsSave = false;
+
+      for (let i = 0; i < employees.length; i++) {
+        if (!employees[i].type) {
+          log(`🔄 マイグレーション: ${employees[i].name} → type=permanent`, 'info');
+          employees[i].type = 'permanent';
+          needsSave = true;
+        }
+      }
+
+      // マイグレーションした場合は保存
+      if (needsSave) {
+        const key = 'heater-employees-' + factoryIndex;
+        localStorage.setItem(key, JSON.stringify(employees));
+        log(`💾 ${factoryNames[factoryIndex]}のマイグレーション完了`, 'success');
+
+        // Firebaseにも保存（全デバイスで同期）
+        if (db) {
+          db.ref('factories/' + factoryIndex + '/employees').set(employees)
+            .then(() => {
+              log(`✅ ${factoryNames[factoryIndex]}のマイグレーションをFirebaseに同期`, 'success');
+            })
+            .catch((error) => {
+              log(`❌ Firebase同期エラー: ${factoryNames[factoryIndex]}`, 'error');
+            });
+        }
+      }
+    }
+
     async function loadAllData() {
       allData = {};
       for (let i = 0; i < 4; i++) {
         const key = 'heater-employees-' + i;
         const saved = localStorage.getItem(key);
         allData[i] = saved ? JSON.parse(saved) : [];
+
+        // マイグレーション: typeがない社員にpermanentを設定
+        migrateEmployeeTypes(i);
       }
     }
 
