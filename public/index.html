@@ -1013,6 +1013,8 @@ function loadData() {
             var data = snapshot.val();
             if (data) {
               allEmployees[factoryIndex] = data;
+              // マイグレーション: typeがない社員にpermanentを設定
+              migrateEmployeeTypes(factoryIndex);
             } else {
               allEmployees[factoryIndex] = [];
             }
@@ -1082,6 +1084,22 @@ function migrateEmployeeTypes(factoryIndex) {
     var key = 'heater-employees-' + factoryIndex;
     localStorage.setItem(key, JSON.stringify(employees));
     console.log('💾 工場' + (factoryIndex + 1) + 'のマイグレーションを保存しました');
+
+    // Firebaseにも保存（全デバイスで同期）
+    if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
+      try {
+        var db = getDatabase();
+        db.ref('factories/' + factoryIndex + '/employees').set(employees)
+          .then(function() {
+            console.log('✅ マイグレーション済みデータをFirebaseに同期');
+          })
+          .catch(function(error) {
+            console.error('❌ Firebase同期エラー:', error);
+          });
+      } catch (e) {
+        console.warn('Firebase保存スキップ:', e);
+      }
+    }
   }
 }
 
@@ -1574,6 +1592,8 @@ function setupFirebaseListeners() {
             console.log('🔄 ' + factoryNames[factoryIndex] + 'がリセットされました（Firebase同期）');
           } else {
             allEmployees[factoryIndex] = data;
+            // マイグレーション: typeがない社員にpermanentを設定
+            migrateEmployeeTypes(factoryIndex);
             console.log('🔄 ' + factoryNames[factoryIndex] + 'のデータを同期しました');
           }
 
