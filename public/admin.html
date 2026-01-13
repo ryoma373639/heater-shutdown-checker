@@ -1439,31 +1439,39 @@
 
     function backupData() {
       try {
-        log('CSVエクスポートを開始...', 'info');
+        log('タイムラインデータのCSVエクスポートを開始...', 'info');
+
+        // タイムライン履歴を取得
+        const history = JSON.parse(localStorage.getItem('heater-activity-history') || '[]');
 
         // CSVヘッダー
         let csvContent = '\uFEFF'; // BOM for Excel UTF-8 support
-        csvContent += '工場名,社員番号,社員名,チェック状態,社員タイプ,登録タイプ\n';
+        csvContent += '日時,操作タイプ,工場名,社員名,社員タイプ,詳細情報\n';
 
-        let totalEmployees = 0;
+        let totalRecords = 0;
 
-        // 全工場のデータをCSVに変換
-        for (let i = 0; i < 4; i++) {
-          const employees = allData[i] || [];
-          const factoryName = factoryNames[i];
+        // タイムラインデータをCSVに変換
+        for (const activity of history) {
+          const timestamp = new Date(activity.timestamp).toLocaleString('ja-JP');
+          const type = activity.type || '';
+          const factoryName = activity.factoryName || '';
+          const employeeName = activity.employeeName || '';
+          const employeeType = activity.employeeType || '';
 
-          for (const emp of employees) {
-            const nameParts = emp.name.split(' ');
-            const employeeNumber = nameParts[0] || '';
-            const employeeName = nameParts.slice(1).join(' ') || emp.name;
-
-            const checkStatus = emp.checked ? '確認済み' : '未確認';
-            const employeeType = emp.type === 'permanent' ? '追加' : '再使用';
-            const typeCategory = emp.type === 'permanent' ? '永続' : '一時';
-
-            csvContent += `"${factoryName}","${employeeNumber}","${employeeName}","${checkStatus}","${employeeType}","${typeCategory}"\n`;
-            totalEmployees++;
+          // 詳細情報を構築
+          let details = '';
+          if (activity.type === 'reset' || activity.type === 'manual-reset') {
+            const info = activity.additionalInfo || {};
+            details = `削除: ${info.deletedCount || 0}名, 保持: ${info.keptCount || 0}名`;
+          } else if (activity.type === 'backup') {
+            const info = activity.additionalInfo || {};
+            details = `${info.totalEmployees || 0}名分エクスポート`;
+          } else {
+            details = JSON.stringify(activity.additionalInfo || {});
           }
+
+          csvContent += `"${timestamp}","${type}","${factoryName}","${employeeName}","${employeeType}","${details}"\n`;
+          totalRecords++;
         }
 
         // ファイル名生成（タイムスタンプ付き）
@@ -1473,7 +1481,7 @@
         const day = String(now.getDate()).padStart(2, '0');
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
-        const filename = `heater-backup-${year}-${month}-${day}_${hours}${minutes}.csv`;
+        const filename = `heater-timeline-${year}-${month}-${day}_${hours}${minutes}.csv`;
 
         // CSVファイルダウンロード
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1487,11 +1495,11 @@
         link.click();
         document.body.removeChild(link);
 
-        log(`CSVエクスポート成功: ${totalEmployees}名 → ${filename}`, 'success');
+        log(`タイムラインCSVエクスポート成功: ${totalRecords}件 → ${filename}`, 'success');
 
         // タイムラインに記録
         saveActivityLog('backup', '', '', null, {
-          totalEmployees: totalEmployees,
+          totalRecords: totalRecords,
           filename: filename,
           timestamp: now.toISOString()
         });
@@ -1841,12 +1849,13 @@
         let backupDetails = '';
         if (activity.type === 'backup' && activity.additionalInfo) {
           const info = activity.additionalInfo;
+          const recordCount = info.totalRecords || info.totalEmployees || 0;
           backupDetails = `
             <div class="timeline-employee" style="color: var(--success-green); font-weight: 600;">
-              CSVエクスポート完了
+              タイムラインCSVエクスポート完了
             </div>
             <div style="font-size: 12px; color: var(--gray-600); margin-top: 4px;">
-              ${info.totalEmployees || 0}名分のデータ | ファイル: ${info.filename || 'N/A'}
+              ${recordCount}件の履歴 | ファイル: ${info.filename || 'N/A'}
             </div>
           `;
         }
