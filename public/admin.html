@@ -997,6 +997,36 @@
     }
 
     // ============================================
+    // Activity History (操作履歴記録)
+    // ============================================
+    function saveActivityLog(type, employeeName, employeeType, factoryIndex, additionalInfo) {
+      const history = JSON.parse(localStorage.getItem('heater-activity-history') || '[]');
+
+      const activity = {
+        timestamp: new Date().toISOString(),
+        type: type, // 'reset', 'manual-reset', etc.
+        factory: factoryIndex !== undefined ? factoryIndex : null,
+        factoryName: factoryIndex !== undefined ? factoryNames[factoryIndex] : '',
+        employeeName: employeeName || '',
+        employeeType: employeeType || '',
+        additionalInfo: additionalInfo || {}
+      };
+
+      history.unshift(activity);
+
+      // 最新500件のみ保持
+      if (history.length > 500) {
+        history.length = 500;
+      }
+
+      localStorage.setItem('heater-activity-history', JSON.stringify(history));
+      log('📝 履歴記録: ' + type, 'info');
+
+      // タイムラインを即座に更新
+      renderTimeline(currentFilter);
+    }
+
+    // ============================================
     // Data Loading
     // ============================================
     // マイグレーション: typeプロパティがない既存データにpermanentを設定
@@ -1237,6 +1267,17 @@
       }
 
       log(`リセット完了 - 合計: 削除${totalDeleted}名、保持${totalKept}名`, 'success');
+
+      // アクティビティログに記録（各工場ごと）
+      for (const i of selectedFactories) {
+        saveActivityLog('reset', '', '', i, {
+          totalDeleted: totalDeleted,
+          totalKept: totalKept,
+          manualReset: true,
+          resetType: 'selected'
+        });
+      }
+
       selectedFactories.clear();
       await refreshDashboard();
     }
@@ -1312,6 +1353,16 @@
       localStorage.setItem('heater-last-reset', now);
       if (db) {
         await db.ref('settings/lastReset').set(now);
+      }
+
+      // アクティビティログに記録（各工場ごと）
+      for (let i = 0; i < 4; i++) {
+        saveActivityLog('reset', '', '', i, {
+          totalDeleted: totalDeleted,
+          totalKept: totalKept,
+          manualReset: true,
+          resetType: 'all'
+        });
       }
 
       log(`全工場リセット完了 - 合計: 削除${totalDeleted}名、保持${totalKept}名`, 'success');
@@ -1718,6 +1769,22 @@
           }
         }
 
+        // リセットの詳細表示
+        let resetDetails = '';
+        if (activity.type === 'reset' && activity.additionalInfo) {
+          const info = activity.additionalInfo;
+          const resetTypeText = info.resetType === 'all' ? '全工場リセット' : '選択工場リセット';
+          const resetMethodText = info.manualReset ? '手動リセット' : '自動リセット';
+          resetDetails = `
+            <div class="timeline-employee" style="color: var(--info-blue); font-weight: 600;">
+              ${resetMethodText} (${resetTypeText})
+            </div>
+            <div style="font-size: 12px; color: var(--gray-600); margin-top: 4px;">
+              削除: ${info.totalDeleted || 0}名（再使用）| 保持: ${info.totalKept || 0}名（追加）
+            </div>
+          `;
+        }
+
         html += `
           <div class="timeline-item">
             <div class="timeline-icon type-${activity.type}">
@@ -1732,6 +1799,7 @@
               ${activity.employeeName ? `<div class="timeline-employee">${activity.employeeName}</div>` : ''}
               ${activity.additionalInfo && activity.additionalInfo.count ? `<div class="timeline-employee">${activity.additionalInfo.count}名</div>` : ''}
               ${finalCheckResult}
+              ${resetDetails}
               <div class="timeline-timestamp">${relativeTime}</div>
             </div>
           </div>
