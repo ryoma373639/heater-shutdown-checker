@@ -837,6 +837,25 @@
           </p>
         </div>
       </div>
+
+      <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 30px 0;">
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: var(--gray-700); font-weight: 600; margin-bottom: 8px;">
+          💾 データバックアップ
+        </label>
+        <p style="color: var(--gray-600); font-size: 13px; margin-bottom: 12px;">
+          全工場の社員データをCSVファイルとしてエクスポートします
+        </p>
+
+        <button class="btn btn-primary" onclick="exportToCSV()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          📥 CSVでダウンロード
+        </button>
+
+        <p id="backupStatus" style="color: var(--gray-600); font-size: 12px; margin-top: 8px;">
+          ファイル名: heater-backup-YYYY-MM-DD.csv
+        </p>
+      </div>
     </div>
 
     <!-- Factory Reset Section -->
@@ -1613,6 +1632,87 @@
       }
     }
 
+    // ============================================
+    // CSV Export Functions
+    // ============================================
+    function exportToCSV() {
+      const statusElement = document.getElementById('backupStatus');
+
+      try {
+        log('CSVエクスポートを開始...', 'info');
+
+        // CSVヘッダー
+        let csvContent = '\uFEFF'; // BOM for Excel UTF-8 support
+        csvContent += '工場名,社員番号,社員名,チェック状態,社員タイプ,登録タイプ\n';
+
+        let totalEmployees = 0;
+
+        // 全工場のデータを収集
+        for (let i = 0; i < 4; i++) {
+          const employees = allData[i] || [];
+          const factoryName = factoryNames[i];
+
+          for (const emp of employees) {
+            // 社員番号と名前を分離（例: "001 山田太郎" -> "001", "山田太郎"）
+            const nameParts = emp.name.split(' ');
+            const employeeNumber = nameParts[0] || '';
+            const employeeName = nameParts.slice(1).join(' ') || emp.name;
+
+            const checkStatus = emp.checked ? '確認済み' : '未確認';
+            const employeeType = emp.type === 'permanent' ? '追加' : '再使用';
+            const typeCategory = emp.type === 'permanent' ? '永続' : '一時';
+
+            csvContent += `"${factoryName}","${employeeNumber}","${employeeName}","${checkStatus}","${employeeType}","${typeCategory}"\n`;
+            totalEmployees++;
+          }
+        }
+
+        // 現在の日時を取得
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const filename = `heater-backup-${year}-${month}-${day}_${hours}${minutes}.csv`;
+
+        // Blobを作成してダウンロード
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // ステータスメッセージを更新
+        statusElement.style.color = 'var(--success-green)';
+        statusElement.textContent = `✅ ${totalEmployees}名のデータをエクスポートしました: ${filename}`;
+        log(`CSVエクスポート成功: ${totalEmployees}名 → ${filename}`, 'success');
+
+        // アクティビティログに記録
+        saveActivityLog('backup', '', '', null, {
+          totalEmployees: totalEmployees,
+          filename: filename,
+          timestamp: now.toISOString()
+        });
+
+        setTimeout(() => {
+          statusElement.style.color = 'var(--gray-600)';
+          statusElement.textContent = 'ファイル名: heater-backup-YYYY-MM-DD.csv';
+        }, 10000);
+
+      } catch (error) {
+        statusElement.style.color = 'var(--primary-red)';
+        statusElement.textContent = '❌ エクスポートに失敗しました';
+        log('CSVエクスポートエラー: ' + error, 'error');
+        console.error('CSV Export Error:', error);
+      }
+    }
+
     function loadPasswordStatus() {
       const statusElement = document.getElementById('passwordChangeStatus');
       const customPasswordHash = localStorage.getItem('heater-custom-password-hash');
@@ -1653,7 +1753,8 @@
         'check': '✅',
         'uncheck': '⬜',
         'reset': '🔃',
-        'final-check': '🎯'
+        'final-check': '🎯',
+        'backup': '💾'
       };
       return icons[type] || '📌';
     }
@@ -1666,7 +1767,8 @@
         'check': '確認をチェック',
         'uncheck': '確認を解除',
         'reset': 'リセット実行',
-        'final-check': '最終確認'
+        'final-check': '最終確認',
+        'backup': 'データバックアップ'
       };
       return typeText[activity.type] || '操作';
     }
@@ -1785,6 +1887,20 @@
           `;
         }
 
+        // バックアップの詳細表示
+        let backupDetails = '';
+        if (activity.type === 'backup' && activity.additionalInfo) {
+          const info = activity.additionalInfo;
+          backupDetails = `
+            <div class="timeline-employee" style="color: var(--success-green); font-weight: 600;">
+              CSVエクスポート完了
+            </div>
+            <div style="font-size: 12px; color: var(--gray-600); margin-top: 4px;">
+              ${info.totalEmployees || 0}名分のデータ | ファイル: ${info.filename || 'N/A'}
+            </div>
+          `;
+        }
+
         html += `
           <div class="timeline-item">
             <div class="timeline-icon type-${activity.type}">
@@ -1800,6 +1916,7 @@
               ${activity.additionalInfo && activity.additionalInfo.count ? `<div class="timeline-employee">${activity.additionalInfo.count}名</div>` : ''}
               ${finalCheckResult}
               ${resetDetails}
+              ${backupDetails}
               <div class="timeline-timestamp">${relativeTime}</div>
             </div>
           </div>
