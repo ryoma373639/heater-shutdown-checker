@@ -1068,14 +1068,35 @@ function loadFromLocalStorage(factoryIndex) {
 
 // マイグレーション: typeプロパティがない既存データにpermanentを設定
 function migrateEmployeeTypes(factoryIndex) {
+  // allEmployeesが存在しない、またはfactoryIndexが範囲外の場合はスキップ
+  if (!allEmployees || !allEmployees[factoryIndex]) {
+    console.warn('⚠️ マイグレーションスキップ: allEmployees[' + factoryIndex + '] が存在しません');
+    return;
+  }
+
   var employees = allEmployees[factoryIndex];
+
+  // 配列でない場合もスキップ
+  if (!Array.isArray(employees)) {
+    console.warn('⚠️ マイグレーションスキップ: allEmployees[' + factoryIndex + '] が配列ではありません');
+    return;
+  }
+
   var needsSave = false;
+  var migrationCount = 0;
 
   for (var i = 0; i < employees.length; i++) {
+    if (!employees[i]) {
+      console.warn('⚠️ 不正なデータ: employees[' + i + '] が null/undefined です');
+      continue;
+    }
+
+    // typeプロパティが存在しない、またはnull/undefinedの場合はpermanentを設定
     if (!employees[i].type) {
       console.log('🔄 マイグレーション: ' + employees[i].name + ' に type=permanent を設定');
       employees[i].type = 'permanent';
       needsSave = true;
+      migrationCount++;
     }
   }
 
@@ -1083,7 +1104,7 @@ function migrateEmployeeTypes(factoryIndex) {
   if (needsSave) {
     var key = 'heater-employees-' + factoryIndex;
     localStorage.setItem(key, JSON.stringify(employees));
-    console.log('💾 工場' + (factoryIndex + 1) + 'のマイグレーションを保存しました');
+    console.log('💾 工場' + (factoryIndex + 1) + 'のマイグレーション完了: ' + migrationCount + '名を permanent に設定');
 
     // Firebaseにも保存（全デバイスで同期）
     if (typeof isFirebaseConnected === 'function' && isFirebaseConnected()) {
@@ -1100,6 +1121,8 @@ function migrateEmployeeTypes(factoryIndex) {
         console.warn('Firebase保存スキップ:', e);
       }
     }
+  } else {
+    console.log('✓ マイグレーション不要: 工場' + (factoryIndex + 1) + 'の全社員にtypeが設定済み');
   }
 }
 
@@ -1144,10 +1167,23 @@ function checkAndResetDaily() {
     console.log('🔄 自動リセット実行中... (設定時刻: ' + resetHour + '時)');
     console.log('📝 チェック状態と「再使用」で追加された社員をクリアします');
 
+    // ⚠️ 重要: リセット前に全工場のマイグレーションを実行（typeプロパティがない社員をpermanentに設定）
+    console.log('🔧 リセット前マイグレーション開始...');
+    for (var mf = 0; mf < factoryNames.length; mf++) {
+      migrateEmployeeTypes(mf);
+    }
+    console.log('✅ リセット前マイグレーション完了');
+
     // 全工場をリセット
     for (var f = 0; f < factoryNames.length; f++) {
+      console.log('━━━ 工場' + (f + 1) + ': ' + factoryNames[f] + ' リセット開始 ━━━');
+
       var employees = allEmployees[f] || [];
       var resetEmployees = [];
+      var deletedCount = 0;
+      var keptCount = 0;
+
+      console.log('現在の社員数: ' + employees.length + '名');
 
       // リセットロジック:
       // - type が 'temporary' (再使用ボタン) → 削除
@@ -1156,17 +1192,26 @@ function checkAndResetDaily() {
       for (var i = 0; i < employees.length; i++) {
         var emp = employees[i];
 
+        if (!emp) {
+          console.warn('⚠️ 不正なデータをスキップ: employees[' + i + '] が null/undefined');
+          continue;
+        }
+
         // 明示的にtemporaryの場合のみ削除
         if (emp.type === 'temporary') {
           console.log('🗑️ 削除: ' + emp.name + ' [type=' + emp.type + '] (再使用ボタンで登録)');
+          deletedCount++;
         } else {
           // permanent または type未設定の場合は残す
           emp.checked = false;
           resetEmployees.push(emp);
           var typeLabel = emp.type || '未設定';
           console.log('✅ 残す: ' + emp.name + ' [type=' + typeLabel + '] (追加ボタン or 既存データ)');
+          keptCount++;
         }
       }
+
+      console.log('📊 工場' + (f + 1) + ' 統計: 削除=' + deletedCount + '名, 保持=' + keptCount + '名');
 
       allEmployees[f] = resetEmployees;
 
