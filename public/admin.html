@@ -1515,30 +1515,60 @@
     // ============================================
 
     function saveResetTime() {
+      console.log('🔧 saveResetTime() 実行開始');
+
       const select = document.getElementById('resetHourSelect');
+      if (!select) {
+        console.error('❌ エラー: resetHourSelect 要素が見つかりません');
+        return;
+      }
+
       const resetHour = parseInt(select.value);
+      console.log('📝 選択されたリセット時刻:', resetHour + '時');
 
-      // Save to localStorage and Firebase
-      localStorage.setItem('heater-reset-hour', resetHour);
+      // Save to localStorage
+      try {
+        localStorage.setItem('heater-reset-hour', resetHour);
+        console.log('✅ localStorage に保存成功:', resetHour);
+      } catch (error) {
+        console.error('❌ localStorage 保存エラー:', error);
+      }
 
+      // Save to Firebase
       if (db) {
-        db.ref('settings/resetHour').set(resetHour);
+        console.log('🔥 Firebase に保存開始...');
+        db.ref('settings/resetHour').set(resetHour)
+          .then(function() {
+            console.log('✅ Firebase に保存成功:', resetHour);
+          })
+          .catch(function(error) {
+            console.error('❌ Firebase 保存エラー:', error);
+          });
+      } else {
+        console.warn('⚠️ Firebase 未接続のため、Firebase への保存をスキップ');
       }
 
       // Update status display
       updateResetTimeDisplay(resetHour);
+      console.log('🔄 表示を更新:', getTimeLabel(resetHour));
 
       log(`自動リセット時刻を ${getTimeLabel(resetHour)} に設定しました`, 'success');
 
       // Show success message
       const status = document.getElementById('resetTimeStatus');
-      status.style.color = 'var(--primary-green)';
-      status.textContent = `✅ 保存しました: ${getTimeLabel(resetHour)}`;
+      if (status) {
+        status.style.color = 'var(--success-green)';
+        status.textContent = `✅ 保存しました: ${getTimeLabel(resetHour)}`;
 
-      setTimeout(() => {
-        status.style.color = 'var(--gray-600)';
-        status.textContent = `現在の設定: ${getTimeLabel(resetHour)}`;
-      }, 3000);
+        setTimeout(() => {
+          status.style.color = 'var(--gray-600)';
+          status.textContent = `現在の設定: ${getTimeLabel(resetHour)}`;
+        }, 3000);
+      } else {
+        console.error('❌ エラー: resetTimeStatus 要素が見つかりません');
+      }
+
+      console.log('✅ saveResetTime() 実行完了');
     }
 
     function loadResetTime() {
