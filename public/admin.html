@@ -1534,18 +1534,19 @@
         console.error('❌ localStorage 保存エラー:', error);
       }
 
-      // Save to Firebase
+      // Save to Firebase (optional - for multi-device sync)
       if (db) {
-        console.log('🔥 Firebase に保存開始...');
+        console.log('🔥 Firebase に保存試行中...');
         db.ref('settings/resetHour').set(resetHour)
           .then(function() {
             console.log('✅ Firebase に保存成功:', resetHour);
           })
           .catch(function(error) {
-            console.error('❌ Firebase 保存エラー:', error);
+            // Firebaseエラーは無視（ローカル保存は成功しているため）
+            console.warn('⚠️ Firebase同期はスキップされました（ローカルには保存済み）:', error.code);
           });
       } else {
-        console.warn('⚠️ Firebase 未接続のため、Firebase への保存をスキップ');
+        console.log('ℹ️ Firebase 未接続（ローカルのみ保存）');
       }
 
       // Update status display
@@ -1558,15 +1559,18 @@
       const status = document.getElementById('resetTimeStatus');
       if (status) {
         status.style.color = 'var(--success-green)';
-        status.textContent = `✅ 保存しました: ${getTimeLabel(resetHour)}`;
+        status.textContent = `✅ 保存完了: ${getTimeLabel(resetHour)} （このデバイスで有効）`;
 
         setTimeout(() => {
           status.style.color = 'var(--gray-600)';
           status.textContent = `現在の設定: ${getTimeLabel(resetHour)}`;
-        }, 3000);
+        }, 5000);
       } else {
         console.error('❌ エラー: resetTimeStatus 要素が見つかりません');
       }
+
+      // Show alert to confirm
+      alert(`✅ リセット時刻を ${getTimeLabel(resetHour)} に変更しました。\n\nこのデバイスで次回 ${getTimeLabel(resetHour)} 以降にアプリを開くと、自動リセットが実行されます。`);
 
       console.log('✅ saveResetTime() 実行完了');
     }
